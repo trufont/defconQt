@@ -1,0 +1,73 @@
+{#
+    sphinxdoc/layout.html
+    ~~~~~~~~~~~~~~~~~~~~~
+
+    Sphinx layout template for the sphinxdoc theme.
+
+    :copyright: Copyright 2007-2016 by the Sphinx team, see AUTHORS.
+    :license: BSD, see LICENSE for details.
+#}
+{%- extends "basic/layout.html" %}
+
+{%- block doctype -%}
+<!DOCTYPE html>
+{%- endblock %}
+{# put the sidebar before the body #}
+{% block sidebar1 %}
+      {%- if render_sidebar %}
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+          {%- block sidebarlogo %}
+          {%- if logo %}
+            <p class="logo"><a href="{{ pathto(master_doc) }}">
+              <img class="logo" src="{{ pathto('_static/' + logo, 1) }}" alt="Logo"/>
+            </a></p>
+          {%- endif %}
+          {%- endblock %}
+          {%- if sidebars != None %}
+            {#- new style sidebar: explicitly include/exclude templates #}
+            {%- for sidebartemplate in sidebars %}
+            {%- include sidebartemplate %}
+            {%- endfor %}
+          {%- else %}
+            {#- old style sidebars: using blocks -- should be deprecated #}
+            {%- block sidebarsearch %}
+            {%- include "searchbox.html" %}
+            {%- endblock %}
+            {%- block sidebartoc %}
+            {%- include "localtoc.html" %}
+            {%- endblock %}
+            {%- block sidebarrel %}
+            {%- include "relations.html" %}
+            {%- endblock %}
+            {%- block sidebarsourcelink %}
+            {%- include "sourcelink.html" %}
+            {%- endblock %}
+            {%- if customsidebar %}
+            {%- include customsidebar %}
+            {%- endif %}
+          {%- endif %}
+        </div>
+      </div>
+      {%- endif %}
+{% endblock %}
+{% block sidebar2 %}{% endblock %}
+
+{% block htmltitle %}
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+{{ super() }}
+{% endblock %}
+{% block extrahead %}
+    <link href='http://fonts.googleapis.com/css?family=Rosario:400,400italic,700'
+          rel='stylesheet' type='text/css' />
+    <link href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,400italic,700'
+          rel='stylesheet' type='text/css' />
+{{ super() }}
+{% endblock %}
+
+{% block rootrellink %}{# maybe remove this #}
+        <li><a href="{{ pathto('index') }}">Documentation</a> &raquo;</li>
+{% endblock %}
+
+{%- block relbar2 %}{% endblock %}
+{%- block footer %}{%- endblock %}

@@ -1,0 +1,3 @@
+# ignore autogen source files
+defconQt*.rst
+modules.rst
