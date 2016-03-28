@@ -163,10 +163,11 @@ class BaseCodeEditor(QPlainTextEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setFont(platformSpecific.fixedFont())
-
         self._indent = "    "
+        self._lineNumbersVisible = True
+        self._shouldGuessWhitespace = True
+
         self.lineNumbers = LineNumberArea(self)
-        self.shouldGuessWhitespace = True
         # kick-in geometry update before arming signals
         self.updateLineNumberAreaWidth()
         self.blockCountChanged.connect(self.updateLineNumberAreaWidth)
@@ -197,7 +198,7 @@ class BaseCodeEditor(QPlainTextEdit):
         """
         Returns whether line numbers are displayed.
         """
-        return self.lineNumbers.isVisible()
+        return self._lineNumbersVisible
 
     def setLineNumbersVisible(self, value):
         """
@@ -207,6 +208,7 @@ class BaseCodeEditor(QPlainTextEdit):
 
         TODO: RTL?
         """
+        self._lineNumbersVisible = value
         self.lineNumbers.setVisible(value)
         self.updateLineNumberAreaWidth()
 
@@ -267,7 +269,7 @@ class BaseCodeEditor(QPlainTextEdit):
             blockNumber += 1
 
     def lineNumberAreaWidth(self):
-        if not self.lineNumbers.isVisible():
+        if not self._lineNumbersVisible:
             return 0
         digits = 1
         top = max(1, self.blockCount())
@@ -360,7 +362,7 @@ class BaseCodeEditor(QPlainTextEdit):
 
     def setPlainText(self, text):
         super().setPlainText(text)
-        if self.shouldGuessWhiteSpace and text is not None:
+        if self._shouldGuessWhitespace and text is not None:
             indent = _guessMinWhitespace(text)
             self.setIndent(indent)
 

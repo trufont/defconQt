@@ -12,6 +12,7 @@ Notes:
 - The *rect* argument is the rect that the glyph is being drawn in
 
 """
+from defcon import Color
 from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import (
     QBrush, QColor, QPainter, QPainterPath, QPen, QTransform)
@@ -69,7 +70,7 @@ def colorToQColor(color):
     .. _Color: https://github.com/typesupply/defcon/blob/ufo3/Lib/defcon/objects/color.py
     .. _QColor: http://doc.qt.io/qt-5/qcolor.html
     """
-    r, g, b, a = color
+    r, g, b, a = Color(color)
     return QColor.fromRgbF(r, g, b, a)
 
 
@@ -378,7 +379,7 @@ def drawGlyphFillAndStroke(
     # selection
     if drawSelection:
         selectionPath = glyph.getRepresentation(
-            "defconQt.FilterSelectionQPainterPath")
+            "TruFont.FilterSelectionQPainterPath")
         pen = QPen(selectionColor)
         pen.setWidthF(5.0 * scale)
         painter.setPen(pen)

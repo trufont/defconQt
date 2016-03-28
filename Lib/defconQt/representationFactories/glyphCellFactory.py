@@ -17,6 +17,7 @@ cellMetricsFillColor = QColor.fromRgbF(0, 0, 0, .08)
 headerFont = platformSpecific.otherUIFont()
 
 # TODO: allow top or bottom headers
+# TODO: fine-tune dirty appearance
 # TODO: show a symbol for content present on other layers
 # XXX: stop drawing all layers
 

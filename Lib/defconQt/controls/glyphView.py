@@ -8,7 +8,7 @@ various display parameters.
 .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
 """
 from defconQt.tools import drawing, platformSpecific
-from PyQt5.QtCore import pyqtSignal, QPointF, QRectF, QSize, Qt
+from PyQt5.QtCore import pyqtSignal, QPoint, QPointF, QRectF, QSize, Qt
 from PyQt5.QtGui import QPainter
 from PyQt5.QtWidgets import QScrollArea, QWidget
 
@@ -134,6 +134,19 @@ class GlyphWidget(QWidget):
         hSB.setValue(hValue)
         vSB.setValue(pos.y() - viewport.height() / 2)
 
+    def _calculateDrawingRect(self):
+        # calculate and store the drawing rect
+        glyphWidth = self._glyph.width * self._scale
+        diff = self.width() - glyphWidth
+        xOffset = round((diff / 2) * self._inverseScale)
+
+        yOffset = self._verticalCenterYBuffer * self._inverseScale
+        yOffset -= self._descender
+
+        w = self.width() * self._inverseScale
+        h = self.height() * self._inverseScale
+        self._drawingRect = (-xOffset, -yOffset, w, h)
+
     def _getGlyphWidthHeight(self):
         if self._glyph is None:
             return 0, 0
@@ -165,14 +178,59 @@ class GlyphWidget(QWidget):
             self.fitScaleMetrics()
             return
         left, bottom, right, top = self._glyph.bounds
-        # TODO: should maybe fit w height or width
         fitHeight = self._scrollArea.height()
         glyphHeight = top - bottom
         glyphHeight += self._noPointSizePadding * 2
-        self.setScale(fitHeight / glyphHeight)
-        glyphWidth = right - left
+        fitWidth = self._scrollArea.width()
+        glyphWidth =  right - left
+        glyphWidth += self._noPointSizePadding * 2
+        self.setScale(min(
+            fitHeight / glyphHeight, fitWidth / glyphWidth))
         self.centerOn(self.mapFromCanvas(
-            QPointF(left + glyphWidth / 2, bottom + (top - bottom) / 2)))
+            QPointF(left + (right - left) / 2, bottom + (top - bottom) / 2)))
+
+    def zoom(self, step, anchor="center"):
+        """
+        Zooms the view by *step* increments (with a scale factor of
+        1.2^*step*), anchored to *anchor*:
+
+        - QPoint_: center on that point
+        - "cursor": center on the mouse cursor position
+        - "center": center on the viewport
+        - None: don’t anchor, i.e. stick to the viewport’s top-left.
+
+        # TODO: improve docs from QGraphicsView descriptions.
+
+        The default is "center".
+
+        .. _QPoint: http://doc.qt.io/qt-5/qpoint.html
+        """
+        oldScale = self._scale
+        newScale = self._scale * pow(1.2, step)
+        shouldScroll = None not in (anchor, self._scrollArea)
+        if newScale < 1e-2 or newScale > 1e3:
+            return
+        if shouldScroll:
+            # compute new scrollbar position
+            # http://stackoverflow.com/a/32269574/2037879
+            hSB = self._scrollArea.horizontalScrollBar()
+            vSB = self._scrollArea.verticalScrollBar()
+            if isinstance(anchor, QPoint):
+                pos = anchor
+            elif anchor == "cursor":
+                pos = self.mapFromGlobal(QCursor.pos())
+            elif anchor == "center":
+                pos = QPoint(self.width() / 2, self.height() / 2)
+            else:
+                raise ValueError("invalid anchor value: {}".format(anchor))
+            scrollBarPos = QPointF(hSB.value(), vSB.value())
+            deltaToPos = (self.mapToParent(pos) - self.pos()) / oldScale
+            delta = deltaToPos * (newScale - oldScale)
+        self.setScale(newScale)
+        self.update()
+        if shouldScroll:
+            hSB.setValue(scrollBarPos.x() + delta.x())
+            vSB.setValue(scrollBarPos.y() + delta.y())
 
     # position mapping
 
@@ -323,6 +381,9 @@ class GlyphWidget(QWidget):
     # Drawing helpers
     # ---------------
 
+    def drawBackground(self, painter):
+        pass
+
     def drawImage(self, painter, glyph, layerName):
         drawing.drawGlyphImage(
             painter, glyph, self._inverseScale, self._drawingRect)
@@ -376,6 +437,9 @@ class GlyphWidget(QWidget):
         drawing.drawGlyphAnchors(
             painter, glyph, self._inverseScale, self._drawingRect)
 
+    def drawForeground(self, painter):
+        pass
+
     # ---------------
     # QWidget methods
     # ---------------
@@ -417,6 +481,7 @@ class GlyphWidget(QWidget):
                     layerName = None
                 layers.append((glyph, layerName))
 
+        self.drawBackground(painter)
         for glyph, layerName in layers:
             # draw the image
             if self.drawingAttribute("showGlyphImage", layerName):
@@ -445,7 +510,12 @@ class GlyphWidget(QWidget):
                 self.drawPoints(painter, glyph, layerName)
             if self.drawingAttribute("showGlyphAnchors", layerName):
                 self.drawAnchors(painter, glyph, layerName)
+        self.drawForeground(painter)
         painter.restore()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._calculateDrawingRect()
 
     def minimumSizeHint(self):
         return self.sizeHint()
@@ -462,41 +532,17 @@ class GlyphWidget(QWidget):
         # calculate and store the vertical centering offset
         maxHeight = max(height, self.height())
         self._verticalCenterYBuffer = (maxHeight - glyphHeight) / 2.0
-        # calculate and store the drawing rect
-        diff = width - glyphWidth
-        xOffset = round((diff / 2) * self._inverseScale)
-        yOffset = self._verticalCenterYBuffer * self._inverseScale
-        yOffset -= self._descender
-        w = width * self._inverseScale
-        h = height * self._inverseScale
-        self._drawingRect = (-xOffset, -yOffset, w, h)
         return QSize(width, height)
 
     def showEvent(self, event):
         super().showEvent(event)
+        self._calculateDrawingRect()
         self.fitScaleBBox()
 
     def wheelEvent(self, event):
         if event.modifiers() & Qt.ControlModifier:
-            factor = pow(1.2, event.angleDelta().y() / 120.0)
-            oldScale = self._scale
-            newScale = self._scale * factor
-            if newScale < 1e-2 or newScale > 1e3:
-                return
-            if self._scrollArea is not None:
-                # compute new scrollbar position
-                # http://stackoverflow.com/a/32269574/2037879
-                hSB = self._scrollArea.horizontalScrollBar()
-                vSB = self._scrollArea.verticalScrollBar()
-                pos = event.pos()
-                scrollBarPos = QPointF(hSB.value(), vSB.value())
-                deltaToPos = (self.mapToParent(pos) - self.pos()) / oldScale
-                delta = deltaToPos * (newScale - oldScale)
-            self.setScale(newScale)
-            self.update()
-            if self._scrollArea is not None:
-                hSB.setValue(scrollBarPos.x() + delta.x())
-                vSB.setValue(scrollBarPos.y() + delta.y())
+            step = event.angleDelta().y() / 120.0
+            self.zoom(step, event.pos())
         else:
             super().wheelEvent(event)
 
@@ -554,6 +600,12 @@ class GlyphView(QScrollArea):
 
     def setDrawingAttribute(self, attr, value, layerName=None):
         self._glyphWidget.setDrawingAttribute(attr, value, layerName)
+
+    def fitScaleBBox(self):
+        self._glyphWidget.fitScaleBBox()
+
+    def zoom(self, factor, anchor="center"):
+        self._glyphWidget.zoom(factor, anchor=anchor)
 
     # convenience
 

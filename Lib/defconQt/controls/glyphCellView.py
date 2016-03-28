@@ -40,7 +40,7 @@ class GlyphCellWidget(QWidget):
     .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
     """
     glyphActivated = pyqtSignal(Glyph)
-    orderChanged = pyqtSignal()
+    glyphsDropped = pyqtSignal()
     selectionChanged = pyqtSignal()
 
     def __init__(self, parent=None):
@@ -218,6 +218,12 @@ class GlyphCellWidget(QWidget):
             self.scrollToCell(self._lastSelectedCell)
         self.selectionChanged.emit()
         self.update()
+
+    def lastSelectedGlyph(self):
+        cell = self._lastSelectedCell
+        if cell is not None:
+            return self._glyphs[cell]
+        return None
 
     # ----------
     # Qt methods
@@ -492,9 +498,7 @@ class GlyphCellWidget(QWidget):
             if newSel < 0 or newSel >= len(self._glyphs):
                 return
             if modifiers & Qt.ShiftModifier:
-                sel = self._linearSelection(newSel)
-                if sel is not None:
-                    self._selection |= sel
+                self._selection |= self._linearSelection(newSel)
             else:
                 self._selection = {newSel}
             self._lastSelectedCell = newSel
@@ -600,44 +604,40 @@ class GlyphCellWidget(QWidget):
             super().dragEnterEvent(event)
 
     def dragMoveEvent(self, event):
-        if event.source() == self:
-            pos = event.pos()
-            self._currentDropIndex = int(
-                self._columnCount * (pos.y() // self._cellHeight) +
-                (pos.x() + .5 * self._cellWidth) // self._cellWidth)
-            self.update()
-        else:
-            super().dragMoveEvent(event)
+        pos = event.pos()
+        self._currentDropIndex = int(
+            self._columnCount * (pos.y() // self._cellHeight) +
+            (pos.x() + .5 * self._cellWidth) // self._cellWidth)
+        self.update()
 
     def dragLeaveEvent(self, event):
         self._currentDropIndex = None
         self.update()
 
     def dropEvent(self, event):
+        insert = self._currentDropIndex
+        newGlyphNames = event.mimeData().text().split(" ")
+        # XXX: meh, serialize glyphs!
+        font = self._glyphs[0].font
+        newGlyphs = [font[name] for name in newGlyphNames]
+        # put all glyphs to be moved to None (deleting them would
+        # invalidate our insert indexes)
         if event.source() == self:
-            insert = self._currentDropIndex
-            newGlyphNames = event.mimeData().text().split(" ")
-            # XXX: meh
-            font = self._glyphs[0].font
-            newGlyphs = [font[name] for name in newGlyphNames]
-            # put all glyphs to be moved to None (deleting them would
-            # invalidate our insert indexes)
-            for index, glyph in enumerate(self._glyphs):
-                if glyph in newGlyphs:
+            selection = self._selection
+            if selection:
+                for index in selection:
                     self._glyphs[index] = None
-            # insert newGlyphs into the list
-            lst = self._glyphs[
-                :insert] + newGlyphs + self._glyphs[insert:]
-            self._glyphs = lst
-            # now, elide None
-            self._currentDropIndex = None
-            self._glyphs = [
-                glyph for glyph in self._glyphs if glyph is not None]
-            self.setSelection(set())
-            self.orderChanged.emit()
-            self.update()
-        else:
-            super().dropEvent(event)
+        # insert newGlyphs into the list
+        lst = self._glyphs[
+            :insert] + newGlyphs + self._glyphs[insert:]
+        self._glyphs = lst
+        # now, elide None
+        self._currentDropIndex = None
+        self._glyphs = [
+            glyph for glyph in self._glyphs if glyph is not None]
+        self.setSelection(set())
+        self.glyphsDropped.emit()
+        self.update()
 
 
 class GlyphCellView(QScrollArea):
@@ -675,6 +675,7 @@ class GlyphCellView(QScrollArea):
         self._glyphCellWidget.setScrollArea(self)
         # reexport signals
         self.glyphActivated = self._glyphCellWidget.glyphActivated
+        self.glyphsDropped = self._glyphCellWidget.glyphsDropped
         self.selectionChanged = self._glyphCellWidget.selectionChanged
 
     # -------------
@@ -735,11 +736,13 @@ class GlyphCellView(QScrollArea):
     def preloadGlyphCellImages(self):
         self._glyphCellWidget.preloadGlyphCellImages()
 
-    def glyphs(self, glyphs):
+    def glyphs(self):
         return self._glyphCellWidget.glyphs()
 
     def setGlyphs(self, glyphs):
+        self._unsubscribeFromGlyphs()
         self._glyphCellWidget.setGlyphs(glyphs)
+        self._subscribeToGlyphs(glyphs)
 
     def glyphsForIndexes(self, indexes):
         return self._glyphCellWidget.glyphsForIndexes(indexes)
@@ -767,6 +770,9 @@ class GlyphCellView(QScrollArea):
 
     def setSelection(self, selection, lastSelectedCell=None):
         self._glyphCellWidget.setSelection(selection, lastSelectedCell)
+
+    def lastSelectedGlyph(self):
+        return self._glyphCellWidget.lastSelectedGlyph()
 
     def selectAll(self):
         self._glyphCellWidget.selectAll()

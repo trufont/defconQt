@@ -49,7 +49,7 @@ class BaseMainWindow(QMainWindow):
     .. _QMainWindow: http://doc.qt.io/qt-5/qmainwindow.html
     """
 
-    def __init__(self, parent=None, flags=None):
+    def __init__(self, parent=None, flags=Qt.Window):
         super().__init__(parent, flags)
         self.setAttribute(Qt.WA_DeleteOnClose)
         _bootstrapGCCache(self)

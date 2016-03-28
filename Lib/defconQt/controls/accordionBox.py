@@ -73,10 +73,11 @@ class AccordionGroup(QObject):
                 self._setCurrentAccordion(None)
 
     def _setCurrentAccordion(self, accordion):
-        if self._currentAccordion is not None:
-            self._currentAccordion.blockSignals(True)
-            self._currentAccordion.setChecked(False)
-            self._currentAccordion.blockSignals(False)
+        prevAccordion = self._currentAccordion
+        if prevAccordion is not None:
+            prevAccordion.toggled.disconnect(self._accordionToggled)
+            prevAccordion.setChecked(False)
+            prevAccordion.toggled.connect(self._accordionToggled)
         self._currentAccordion = accordion
 
     def addAccordion(self, accordion):
@@ -86,7 +87,7 @@ class AccordionGroup(QObject):
         if accordion not in self._accordions:
             self._accordions.add(accordion)
             accordion.toggled.connect(self._accordionToggled)
-        if accordion.isChecked():
+        if self._exclusive and accordion.isChecked():
             self._setCurrentAccordion(accordion)
 
     def createAccordion(self, title=None, parent=None):

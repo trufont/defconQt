@@ -20,6 +20,7 @@ _glyphFactories = {
         OutlineInformationFactory,
         ("Glyph.Changed", "Glyph.SelectionChanged")),
 }
+# TODO: should this really be in defconQt?
 _componentFactories = {
     "defconQt.QPainterPath": (
         ComponentQPainterPathFactory, ("Component.Changed",

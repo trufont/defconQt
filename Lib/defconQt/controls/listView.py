@@ -14,11 +14,13 @@ __all__ = ["ListView"]
 
 
 class AbstractListModel(QAbstractTableModel):
+    valueChanged = pyqtSignal(QModelIndex, object, object)
 
     def __init__(self, lst, parent=None):
         super().__init__(parent)
+        self._headerLabels = []
+        self._sorted = False
         self._setList(lst)
-        self._headerTitles = []
 
     # implementation-specific methods
 
@@ -46,14 +48,24 @@ class AbstractListModel(QAbstractTableModel):
         return list(self._list)
 
     def _setList(self, lst):
+        if self._sorted:
+            lst = sorted(lst)
         self._list = lst
 
-    def headerTitles(self):
-        return list(self._headerTitles)
+    def headerLabels(self):
+        return list(self._headerLabels)
 
-    def setHeaderTitles(self, titles):
-        assert len(titles) <= len(self._list)
-        self._headerTitles = titles
+    def setHeaderLabels(self, labels):
+        assert len(labels) <= len(self._list)
+        self._headerLabels = labels
+
+    def sorted(self):
+        return self._sorted
+
+    def setSorted(self, value):
+        self._sorted = value
+        if value:
+            self._list = sorted(self._list)
 
     # builtins
 
@@ -64,9 +76,11 @@ class AbstractListModel(QAbstractTableModel):
         return None
 
     def setData(self, index, value, role=Qt.EditRole):
-        if index.isValid() and role == Qt.DisplayRole:
+        if index.isValid() and role in (Qt.DisplayRole, Qt.EditRole):
             row, column = index.row(), index.column()
+            oldValue = self._data(row, column)
             self._setData(row, column, value)
+            self.valueChanged.emit(index, oldValue, value)
             self.dataChanged.emit(index, index, [role])
             return True
         return super().setData(index, value, role)
@@ -116,10 +130,10 @@ class AbstractListModel(QAbstractTableModel):
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
-            if section >= len(self._headerTitles):
+            if section >= len(self._headerLabels):
                 return None
             else:
-                return self._headerTitles[section]
+                return self._headerLabels[section]
         return super().headerData(section, orientation, role)
 
 
@@ -160,14 +174,14 @@ class OneTwoListModel(AbstractListModel):
         if self._is2D:
             return self._list[row][column]
         else:
-            assert column == 1
+            assert column == 0
             return self._list[row]
 
     def _setData(self, row, column, value):
         if self._is2D:
             self._list[row][column] = value
         else:
-            assert column == 1
+            assert column == 0
             self._list[row] = value
 
     def _columnCount(self):
@@ -189,6 +203,8 @@ class OneTwoListModel(AbstractListModel):
             del self._list[index]
 
     def _setList(self, lst):
+        if self._sorted:
+            lst = sorted(lst)
         self._list = lst
         if len(self._list) and isinstance(self._list[0], list):
             self._is2D = True
@@ -205,22 +221,45 @@ class ListView(QTreeView):
     Emits *listChanged* when data changes inside the widget (when performing
     drag and drop, mostly).
 
-    # TODO: listChanged emits multiple times...
-    # preserve widgets on drag/drop and maybe clear on setList()
+    # TODO: preserve widgets on drag/drop and maybe clear on setList()
     # TODO: make it possible to up/down selected row w shortcut
     # e.g. Alt+Up/Down
     """
-    listChanged = pyqtSignal()
+    currentItemChanged = pyqtSignal(object)
+
     flatListModelClass = FlatListModel
     oneTwoListModelClass = OneTwoListModel
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setDragDropMode(QAbstractItemView.InternalMove)
         self.setRootIsDecorated(False)
         self.header().setVisible(False)
         self._flatListInput = False
         self._triggers = None
+
+    def currentChanged(self, current, previous):
+        super().currentChanged(current, previous)
+        model = self.model()
+        self.currentItemChanged.emit(model.data(current))
+
+    def currentValue(self):
+        index = self.currentIndex()
+        model = self.model()
+        if model is None:
+            return None
+        return model.data(index)
+
+    def removeCurrentRow(self):
+        index = self.currentIndex()
+        model = self.model()
+        model.removeRow(index.row())
+
+    def setCurrentIndex(self, row, column):
+        model = self.model()
+        if model is None:
+            return
+        index = model.index(row, column)
+        super().setCurrentIndex(index)
 
     def setEditable(self, value):
         """
@@ -235,20 +274,24 @@ class ListView(QTreeView):
             self._triggers = self.editTriggers()
             self.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
-    def headerTitles(self):
+    def headerLabels(self):
         """
-        Returns this widget’s current header titles.
+        Returns this widget’s current header labels.
         """
         model = self.model()
-        return model.headerTitles()
+        if model is None:
+            return None
+        return model.headerLabels()
 
-    def setHeaderTitles(self, titles):
+    def setHeaderLabels(self, labels):
         """
-        Sets the header titles to *titles* (should be a list of strings).
+        Sets the header labels to *labels* (should be a list of strings).
         """
         model = self.model()
-        model.setHeaderTitles(titles)
-        self.header().setVisible(bool(titles))
+        if model is None:
+            return
+        model.setHeaderLabels(labels)
+        self.header().setVisible(bool(labels))
 
     def list(self):
         """
@@ -271,18 +314,30 @@ class ListView(QTreeView):
 
         # TODO: we should maybe clear indexWidgets here
         """
-        # maybe clear previous signal
-        currentModel = self.model()
-        if currentModel is not None:
-            currentModel.dataChanged.disconnect(self.listChanged)
-        # now spawn the new model
-        if self._flatListInput:
-            modelClass = self.flatListModelClass
+        model = self.model()
+        if model is None:
+            if self._flatListInput:
+                modelClass = self.flatListModelClass
+            else:
+                modelClass = self.oneTwoListModelClass
+            model = modelClass(lst, **kwargs)
+            self.valueChanged = model.valueChanged
         else:
-            modelClass = self.oneTwoListModelClass
-        model = modelClass(lst, **kwargs)
+            model._setList(lst)
         self.setModel(model)
-        model.dataChanged.connect(self.listChanged)
+        # trigger a refresh
+        model.layoutChanged.emit()
+
+    def sorted(self):
+        model = self.model()
+        if model is None:
+            return False
+        return model.sorted()
+
+    def setSorted(self, value):
+        model = self.model()
+        if model:
+            model.setSorted(value)
 
     def flatListInput(self):
         """
