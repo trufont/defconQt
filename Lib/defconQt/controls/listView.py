@@ -19,7 +19,6 @@ class AbstractListModel(QAbstractTableModel):
     def __init__(self, lst, parent=None):
         super().__init__(parent)
         self._headerLabels = []
-        self._sorted = False
         self._setList(lst)
 
     # implementation-specific methods
@@ -48,8 +47,6 @@ class AbstractListModel(QAbstractTableModel):
         return list(self._list)
 
     def _setList(self, lst):
-        if self._sorted:
-            lst = sorted(lst)
         self._list = lst
 
     def headerLabels(self):
@@ -203,8 +200,6 @@ class OneTwoListModel(AbstractListModel):
             del self._list[index]
 
     def _setList(self, lst):
-        if self._sorted:
-            lst = sorted(lst)
         self._list = lst
         if len(self._list) and isinstance(self._list[0], list):
             self._is2D = True
@@ -327,17 +322,6 @@ class ListView(QTreeView):
         self.setModel(model)
         # trigger a refresh
         model.layoutChanged.emit()
-
-    def sorted(self):
-        model = self.model()
-        if model is None:
-            return False
-        return model.sorted()
-
-    def setSorted(self, value):
-        model = self.model()
-        if model:
-            model.setSorted(value)
 
     def flatListInput(self):
         """

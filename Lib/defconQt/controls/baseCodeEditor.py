@@ -6,7 +6,7 @@ The *baseCodeEditor* submodule provides language-agnostic code editor parts,
 including a search widget, goto dialog and code highlighter.
 """
 from defconQt.tools import platformSpecific
-from PyQt5.QtCore import pyqtSignal, Qt, QSize
+from PyQt5.QtCore import pyqtSignal, QRegularExpression, QSize, Qt
 from PyQt5.QtGui import (
     QColor, QIntValidator, QPainter, QSyntaxHighlighter, QTextCursor,
     QTextDocument)
@@ -86,7 +86,8 @@ class LineNumberArea(QWidget):
 
 class BaseCodeHighlighter(QSyntaxHighlighter):
     """
-    A QSyntaxHighlighter_ that highlights code using `perl regexes`_.
+    A QSyntaxHighlighter_ that highlights code using QRegularExpression_
+    (perl regexes).
     Append a tuple of (pattern, format) to the *highlightingRules* attribute to
     get started.
 
@@ -94,7 +95,7 @@ class BaseCodeHighlighter(QSyntaxHighlighter):
     - *format*: a QTextCharFormat_ describing text formatting for the given
       block.
 
-    .. _`perl regexes`: https://docs.python.org/3/library/re.html
+    .. _QRegularExpression: http://doc.qt.io/qt-5/qregularexpression.html
     .. _QSyntaxHighlighter: http://doc.qt.io/qt-5/qsyntaxhighlighter.html
     .. _QTextCharFormat: http://doc.qt.io/qt-5/qtextcharformat.html
     """
@@ -105,9 +106,12 @@ class BaseCodeHighlighter(QSyntaxHighlighter):
 
     def highlightBlock(self, text):
         for pattern, fmt in self.highlightingRules:
-            for match in re.finditer(pattern, text):
-                start = match.start()
-                length = match.end() - start
+            regex = QRegularExpression(pattern)
+            i = regex.globalMatch(text)
+            while i.hasNext():
+                match = i.next()
+                start = match.capturedStart()
+                length = match.capturedLength()
                 self.setFormat(start, length, fmt)
         self.setCurrentBlockState(0)
 
@@ -205,8 +209,6 @@ class BaseCodeEditor(QPlainTextEdit):
         Sets whether line numbers should be displayed on the left margin.
 
         The default is true.
-
-        TODO: RTL?
         """
         self._lineNumbersVisible = value
         self.lineNumbers.setVisible(value)

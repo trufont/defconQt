@@ -27,7 +27,7 @@ class GlyphLineWidget(QWidget):
     """
     glyphActivated = pyqtSignal(Glyph)
     pointSizeModified = pyqtSignal(int)
-    selectionModified = pyqtSignal(int)
+    selectionModified = pyqtSignal(object)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -76,6 +76,13 @@ class GlyphLineWidget(QWidget):
     # External API
     # ------------
 
+    def scrollArea(self):
+        return self._scrollArea
+
+    def setScrollArea(self, scrollArea):
+        scrollArea.setWidget(self)
+        self._scrollArea = scrollArea
+
     def glyphRecords(self):
         """
         Returns the list of :class:`GlyphRecord` in the widgets. This may be
@@ -112,8 +119,17 @@ class GlyphLineWidget(QWidget):
         if descenders:
             self._descender = min(descenders)
         self._calcScale()
+        # TODO: consider transferring selection?
+        self.setSelected(None)
         self.setShowLayers(self._showLayers)
         self.adjustSize()
+        self.update()
+
+    def selected(self):
+        return self._selected
+
+    def setSelected(self, index):
+        self._selected = index
         self.update()
 
     def pointSize(self):
@@ -270,6 +286,14 @@ class GlyphLineWidget(QWidget):
         The default is false.
         """
         self._wrapLines = value
+        scrollArea = self._scrollArea
+        if scrollArea is not None:
+            if value:
+                scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+                scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+            else:
+                scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+                scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.adjustSize()
         self.update()
 
@@ -370,10 +394,10 @@ class GlyphLineWidget(QWidget):
             visibleWidth = parent.width() if parent is not None else self.width()
             lines = 1
             for glyphRecord in self._glyphRecords:
+                glyph = glyphRecord.glyph
                 gWidth = (glyphRecord.advanceWidth + glyphRecord.xPlacement +
                           glyphRecord.xAdvance) * self._scale
-                # TODO: implement \n? do it correctly anyway
-                if curWidth + gWidth > visibleWidth:
+                if curWidth + gWidth > visibleWidth or glyph.unicode == 2029:
                     curWidth = self._buffer * 2 + gWidth
                     lines += 1
                 else:
@@ -381,6 +405,18 @@ class GlyphLineWidget(QWidget):
                 width = max(curWidth, width)
             height += lines * self._pointSize * self._lineHeight
         return QSize(width, height)
+
+    # ------------
+    # Input events
+    # ------------
+
+    def mouseDoubleClickEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            if self._selected is not None:
+                glyphRecord = self._glyphRecords[self._selected]
+                self.glyphActivated.emit(glyphRecord.glyph)
+        else:
+            super().mouseDoubleClickEvent(event)
 
     def wheelEvent(self, event):
         if event.modifiers() & Qt.ControlModifier:
@@ -397,7 +433,7 @@ class GlyphLineWidget(QWidget):
     # Painting
     # --------
 
-    def drawGlyph(self, painter, glyph, rect, selection=False):
+    def drawGlyph(self, painter, glyph, rect, selected=False):
         # gather the layers
         layerSet = glyph.layerSet
         if layerSet is None or not self._showLayers:
@@ -414,7 +450,7 @@ class GlyphLineWidget(QWidget):
                     layerName = None
                 layers.append((g, layerName))
 
-        self.drawGlyphBackground(painter, glyph, rect, selection=selection)
+        self.drawGlyphBackground(painter, glyph, rect, selected=selected)
 
         for g, layerName in layers:
             # draw the image
@@ -445,12 +481,12 @@ class GlyphLineWidget(QWidget):
             if self.drawingAttribute("showGlyphAnchors", layerName):
                 self.drawAnchors(painter, g, layerName, rect)
 
-        self.drawGlyphForeground(painter, glyph, rect, selection=selection)
+        self.drawGlyphForeground(painter, glyph, rect, selected=selected)
 
-    def drawGlyphBackground(self, painter, glyph, rect, selection=False):
+    def drawGlyphBackground(self, painter, glyph, rect, selected=False):
         if glyph.name == ".notdef":
             painter.fillRect(QRectF(*rect), self._notdefBackgroundColor)
-        if selection:
+        if selected:
             if self._glyphSelectionColor is not None:
                 selectionColor = self._glyphSelectionColor
             else:
@@ -497,8 +533,7 @@ class GlyphLineWidget(QWidget):
         drawing.drawGlyphFillAndStroke(
             painter, glyph, self._inverseScale, rect, drawFill=showFill,
             drawStroke=showStroke, contourFillColor=fillColor,
-            componentFillColor=fillColor,
-            backgroundColor=self._backgroundColor)
+            componentFillColor=fillColor)
 
     def drawPoints(self, painter, glyph, layerName, rect):
         drawStartPoint = self.drawingAttribute(
@@ -521,7 +556,7 @@ class GlyphLineWidget(QWidget):
             painter, glyph, self._inverseScale, rect, drawText=drawText,
             backgroundColor=self._backgroundColor, flipped=True)
 
-    def drawGlyphForeground(self, painter, glyph, rect, selection=False):
+    def drawGlyphForeground(self, painter, glyph, rect, selected=False):
         pass
 
     # ------
@@ -596,7 +631,7 @@ class GlyphLineWidget(QWidget):
             # possibly go to the next line
             if self._wrapLines:
                 incomingWidth = left + (w + xP + xA) * scale + self._buffer
-                if incomingWidth > self.width():
+                if incomingWidth > self.width() or glyph.unicode == 2029:
                     top += upm * self._lineHeight * scale
                     painter.translate(
                         (self._buffer - left) * self._inverseScale, yDirection * upm * self._lineHeight)
@@ -614,8 +649,8 @@ class GlyphLineWidget(QWidget):
                 painter.translate(xP, yP)
             # draw the glyph
             rect = (-xP, descender - yP, w, upm)
-            selection = self._selected == recordIndex
-            self.drawGlyph(painter, glyph, rect, selection=selection)
+            selected = self._selected == recordIndex
+            self.drawGlyph(painter, glyph, rect, selected=selected)
             # shift for the next glyph
             painter.translate(w + xA - xP, h + yA - yP)
             left += glyphWidth
@@ -662,7 +697,7 @@ class GlyphLineWidget(QWidget):
             # possibly go to the next line
             if self._wrapLines:
                 incomingLeft = left - (w + xP + xA) * scale - self._buffer
-                if incomingLeft < 0:
+                if incomingLeft < 0 or glyph.unicode == 2029:
                     top += upm * self._lineHeight * scale
                     painter.translate(
                         (self.width() - self._buffer - left) * self._inverseScale, yDirection * upm * self._lineHeight)
@@ -681,8 +716,8 @@ class GlyphLineWidget(QWidget):
             painter.translate(-w - xA + xP, yP)
             # draw the glyph
             rect = (-xP, descender - yP, w, upm)
-            selection = self._selected == recordIndex
-            self.drawGlyph(painter, glyph, rect, selection=selection)
+            selected = self._selected == recordIndex
+            self.drawGlyph(painter, glyph, rect, selected=selected)
             # shift for the next glyph
             painter.translate(-xP, h + yA - yP)
             left -= (w + xP + xA) * scale
@@ -729,8 +764,9 @@ class GlyphLineView(QScrollArea):
 
         self._applyKerning = applyKerning
         self._glyphLineWidget = self.glyphLineWidgetClass(self)
-        self.setWidget(self._glyphLineWidget)
+        self._glyphLineWidget.setScrollArea(self)
         # reexport signals
+        self.glyphActivated = self._glyphLineWidget.glyphActivated
         self.pointSizeModified = self._glyphLineWidget.pointSizeModified
         self.selectionModified = self._glyphLineWidget.selectionModified
 
@@ -779,7 +815,13 @@ class GlyphLineView(QScrollArea):
                 font.kerning.removeObserver(self, "Kerning.Changed")
 
     def _glyphChanged(self, notification):
-        self._glyphLineWidget.update()
+        #self._glyphLineWidget.update()
+        # TODO: figure out whether to use advanceWidth at all or not
+        glyphRecords = self._glyphLineWidget.glyphRecords()
+        for glyphRecord in glyphRecords:
+            glyph = glyphRecord.glyph
+            glyphRecord.advanceWidth = glyph.width
+        self._glyphLineWidget.setGlyphRecords(glyphRecords)
 
     def _kerningChanged(self, notification):
         glyphRecords = self._glyphLineWidget.glyphRecords()
@@ -933,12 +975,6 @@ class GlyphLineView(QScrollArea):
         return self._glyphLineWidget.wrapLines()
 
     def setWrapLines(self, value):
-        if value:
-            self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-            self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        else:
-            self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-            self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self._glyphLineWidget.setWrapLines(value)
 
     def selected(self):

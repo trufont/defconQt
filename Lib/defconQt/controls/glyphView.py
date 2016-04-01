@@ -12,6 +12,11 @@ from PyQt5.QtCore import pyqtSignal, QPoint, QPointF, QRectF, QSize, Qt
 from PyQt5.QtGui import QPainter
 from PyQt5.QtWidgets import QScrollArea, QWidget
 
+# TODO: when the scrollArea resizes, keep the view centered
+
+GlyphViewMinSizeForCoordinates = 250
+GlyphViewMinSizeForDetails = 175
+
 UIFont = platformSpecific.otherUIFont()
 
 
@@ -161,12 +166,16 @@ class GlyphWidget(QWidget):
         """
         Scales and centers the viewport around the font’s metrics.
         """
-        fitHeight = self._scrollArea.height()
+        scrollArea = self._scrollArea
+        if scrollArea:
+            fitHeight = scrollArea.viewport().height()
+        else:
+            fitHeight = self.height()
         glyphWidth, glyphHeight = self._getGlyphWidthHeight()
         glyphHeight += self._noPointSizePadding * 2
         self.setScale(fitHeight / glyphHeight)
         self.centerOn(self.mapFromCanvas(
-            QPointF(glyphWidth / 2, self._descender + (top - bottom) / 2)))
+            QPointF(glyphWidth / 2, self._descender + self._unitsPerEm / 2)))
 
     def fitScaleBBox(self):
         """
@@ -177,11 +186,17 @@ class GlyphWidget(QWidget):
         if self._glyph.bounds is None:
             self.fitScaleMetrics()
             return
+        scrollArea = self._scrollArea
+        if scrollArea:
+            viewport = self._scrollArea.viewport()
+            fitHeight = viewport.height()
+            fitWidth = viewport.width()
+        else:
+            fitHeight = self.height()
+            fitWidth = self.width()
         left, bottom, right, top = self._glyph.bounds
-        fitHeight = self._scrollArea.height()
         glyphHeight = top - bottom
         glyphHeight += self._noPointSizePadding * 2
-        fitWidth = self._scrollArea.width()
         glyphWidth =  right - left
         glyphWidth += self._noPointSizePadding * 2
         self.setScale(min(
@@ -397,7 +412,9 @@ class GlyphWidget(QWidget):
             painter, glyph, self._inverseScale, self._drawingRect)
 
     def drawVerticalMetrics(self, painter, glyph, layerName):
-        drawText = self._impliedPointSize > 175
+        drawText = self.drawingAttribute(
+            "showFontVerticalMetricsTitles", layerName) and \
+            self._impliedPointSize > GlyphViewMinSizeForDetails
         drawing.drawFontVerticalMetrics(
             painter, glyph, self._inverseScale, self._drawingRect,
             drawText=drawText)
@@ -414,25 +431,23 @@ class GlyphWidget(QWidget):
             drawFill=showFill, drawStroke=showStroke)
 
     def drawPoints(self, painter, glyph, layerName):
+        if not self._impliedPointSize > GlyphViewMinSizeForDetails:
+            return
         drawStartPoints = self.drawingAttribute(
-            "showGlyphStartPoints", layerName) and self._impliedPointSize > 175
+            "showGlyphStartPoints", layerName)
         drawOnCurves = self.drawingAttribute(
-            "showGlyphOnCurvePoints", layerName) and \
-            self._impliedPointSize > 175
+            "showGlyphOnCurvePoints", layerName)
         drawOffCurves = self.drawingAttribute(
-            "showGlyphOffCurvePoints", layerName) and \
-            self._impliedPointSize > 175
+            "showGlyphOffCurvePoints", layerName)
         drawCoordinates = self.drawingAttribute(
-            "showGlyphPointCoordinates", layerName) and \
-            self._impliedPointSize > 250
+            "showGlyphPointCoordinates", layerName)
         drawing.drawGlyphPoints(
             painter, glyph, self._inverseScale, self._drawingRect,
             drawStartPoints=drawStartPoints, drawOnCurves=drawOnCurves,
-            drawOffCurves=drawOffCurves, drawCoordinates=drawCoordinates,
-            backgroundColor=Qt.white)
+            drawOffCurves=drawOffCurves, drawCoordinates=drawCoordinates)
 
     def drawAnchors(self, painter, glyph, layerName):
-        if not self._impliedPointSize > 175:
+        if not self._impliedPointSize > GlyphViewMinSizeForDetails:
             return
         drawing.drawGlyphAnchors(
             painter, glyph, self._inverseScale, self._drawingRect)
@@ -530,7 +545,11 @@ class GlyphWidget(QWidget):
         width = glyphWidth + xOffset
         height = glyphHeight + yOffset
         # calculate and store the vertical centering offset
-        maxHeight = max(height, self.height())
+        scrollArea = self._scrollArea
+        if scrollArea:
+            maxHeight = max(height, scrollArea.viewport().height())
+        else:
+            maxHeight = height
         self._verticalCenterYBuffer = (maxHeight - glyphHeight) / 2.0
         return QSize(width, height)
 

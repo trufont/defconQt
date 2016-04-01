@@ -6,45 +6,23 @@ def characterToGlyphName(c, cmap):
     return v
 
 
-def splitText(text, cmap, fallback=".notdef"):
+def compileStack(glyphNames, stack):
+    if stack:
+        glyphNames.append("".join(stack))
+
+
+def escapeText(text):
+    return text.replace("//", "/slash ")
+
+
+def splitText(text, cmap, fallback=".notdef", cmapFunc=characterToGlyphName,
+              compileFunc=compileStack, escapeFunc=escapeText):
     """
     Break a string of characters or / delimited glyph names
     into a list.
-
-    - Test name compiling
-    >>> splitText("/a", {})
-    ['a']
-    >>> splitText("/aacute/bbreve", {})
-    ['aacute', 'bbreve']
-    >>> splitText("/aacute /bbreve", {})
-    ['aacute', 'bbreve']
-
-    - Test character input
-    >>> splitText("*.", {})
-    ['.notdef', '.notdef']
-    >>> splitText("*.", {42:"asterisk", 46:"period"})
-    ['asterisk', 'period']
-
-    - Test slash escaping
-    >>> splitText("//", {})
-    ['slash']
-    >>> splitText("///", {})
-    ['slash']
-    >>> splitText("////", {})
-    ['slash', 'slash']
-    >>> splitText("/ /", {})
-    []
-    >>> splitText("/ /", {})
-    []
-    >>> splitText("1//2", {49:"one", 50:"two"})
-    ['one', 'slash', 'two']
-
-    - Test mixture
-    >>> splitText("*/aacute .%//", {42:"asterisk", 46:"period"})
-    ['asterisk', 'aacute', 'period', '.notdef', 'slash']
     """
-    # escape //
-    text = text.replace("//", "/slash ")
+    # escape
+    text = escapeFunc(text)
     #
     glyphNames = []
     compileStack = None
@@ -54,8 +32,7 @@ def splitText(text, cmap, fallback=".notdef"):
             # finishing a previous compile.
             if compileStack is not None:
                 # only add the compile if something has been added to the stack.
-                if compileStack:
-                    glyphNames.append("".join(compileStack))
+                compileFunc(glyphNames, compileStack)
             # reset the stack.
             compileStack = []
         # adding to or ending a glyph name compile.
@@ -63,19 +40,17 @@ def splitText(text, cmap, fallback=".notdef"):
             # space. conclude the glyph name compile.
             if c == " ":
                 # only add the compile if something has been added to the stack.
-                if compileStack:
-                    glyphNames.append("".join(compileStack))
+                compileFunc(glyphNames, compileStack)
                 compileStack = None
             # add the character to the stack.
             else:
                 compileStack.append(c)
         # adding a character that needs to be converted to a glyph name.
         else:
-            glyphName = characterToGlyphName(c, cmap)
+            glyphName = cmapFunc(c, cmap)
             if glyphName is None:
                 glyphName = fallback
             glyphNames.append(glyphName)
     # catch remaining compile.
-    if compileStack is not None and compileStack:
-        glyphNames.append("".join(compileStack))
+    compileFunc(glyphNames, compileStack)
     return glyphNames
