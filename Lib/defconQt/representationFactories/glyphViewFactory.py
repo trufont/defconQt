@@ -71,17 +71,6 @@ class OnlyComponentsQtPen(BasePen):
             tPen = TransformPen(self.pen, transformation)
             glyph.draw(tPen)
 
-# --------------
-# component path
-# --------------
-
-
-def ComponentQPainterPathFactory(component):
-    pen = OnlyComponentsQtPen(component.font)
-    component.draw(pen)
-    pen.path.setFillRule(Qt.WindingFill)
-    return pen.path
-
 # ----------
 # point data
 # ----------
@@ -154,9 +143,9 @@ class OutlineInformationPen(AbstractPointPen):
         pass
 
     def addPoint(self, pt, segmentType=None, smooth=False, name=None,
-                 selected=False, **kwargs):
+                 **kwargs):
         d = dict(point=pt, segmentType=segmentType, smooth=smooth, name=name,
-                 selected=selected)
+                 **kwargs)
         self._rawPointData[-1].append(d)
 
     def addComponent(self, baseGlyphName, transformation):
@@ -188,11 +177,10 @@ def QPixmapFactory(image):
     data = images[image.fileName]
     pixmap = QPixmap()
     pixmap.loadFromData(data)
-    if imageColor is None:
-        return pixmap
-    # TODO: test this
-    painter = QPainter(pixmap)
-    colorEffect = QGraphicsColorizeEffect()
-    colorEffect.setColor(imageColor)
-    colorEffect.draw(painter)
+    if imageColor is not None:
+        # TODO: test this
+        painter = QPainter(pixmap)
+        colorEffect = QGraphicsColorizeEffect()
+        colorEffect.setColor(imageColor)
+        colorEffect.draw(painter)
     return pixmap

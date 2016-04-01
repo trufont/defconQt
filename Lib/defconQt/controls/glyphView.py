@@ -8,8 +8,8 @@ various display parameters.
 .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
 """
 from defconQt.tools import drawing, platformSpecific
-from PyQt5.QtCore import pyqtSignal, QPoint, QPointF, QRectF, QSize, Qt
-from PyQt5.QtGui import QPainter
+from PyQt5.QtCore import pyqtSignal, QPoint, QPointF, QSize, Qt
+from PyQt5.QtGui import QCursor, QPainter
 from PyQt5.QtWidgets import QScrollArea, QWidget
 
 # TODO: when the scrollArea resizes, keep the view centered
@@ -197,7 +197,7 @@ class GlyphWidget(QWidget):
         left, bottom, right, top = self._glyph.bounds
         glyphHeight = top - bottom
         glyphHeight += self._noPointSizePadding * 2
-        glyphWidth =  right - left
+        glyphWidth = right - left
         glyphWidth += self._noPointSizePadding * 2
         self.setScale(min(
             fitHeight / glyphHeight, fitWidth / glyphWidth))

@@ -8,11 +8,10 @@ including a search widget, goto dialog and code highlighter.
 from defconQt.tools import platformSpecific
 from PyQt5.QtCore import pyqtSignal, QRegularExpression, QSize, Qt
 from PyQt5.QtGui import (
-    QColor, QIntValidator, QPainter, QSyntaxHighlighter, QTextCursor,
-    QTextDocument)
+    QColor, QIntValidator, QPainter, QSyntaxHighlighter, QTextCursor)
 from PyQt5.QtWidgets import (
-    QDialog, QDialogButtonBox, QGridLayout, QLineEdit, QPlainTextEdit,
-    QPushButton, QVBoxLayout, QWidget)
+    QDialog, QDialogButtonBox, QLineEdit, QPlainTextEdit, QVBoxLayout,
+    QWidget)
 import re
 
 __all__ = ["GotoLineDialog", "BaseCodeHighlighter", "BaseCodeEditor"]

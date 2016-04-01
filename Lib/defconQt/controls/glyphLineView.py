@@ -126,10 +126,31 @@ class GlyphLineWidget(QWidget):
         self.update()
 
     def selected(self):
+        """
+        Returns the currently selected glyph’s index, or None if none are
+        selected.
+        """
         return self._selected
 
-    def setSelected(self, index):
-        self._selected = index
+    def setSelected(self, value):
+        """
+        Sets *value*-th glyph as the selected glyph, or none if *value* is
+        None.
+
+        *value* should be less than the number of glyphRecords present in the
+        widget.
+        """
+        self._selected = value
+        if self._selected is not None and self._glyphRecordsRects is not None:
+            parent = self.parent()
+            if isinstance(parent, QScrollArea):
+                rect = None
+                for r, indexRecord in self._glyphRecordsRects.items():
+                    if indexRecord == self._selected:
+                        rect = QRectF(r)
+                        break
+                if rect is not None:
+                    parent.ensureVisible(rect)
         self.update()
 
     def pointSize(self):
@@ -338,34 +359,6 @@ class GlyphLineWidget(QWidget):
             self._layerDrawingAttributes[layerName][attr] = value
         self.update()
 
-    def selected(self):
-        """
-        Returns the currently selected glyph’s index, or None if none are
-        selected.
-        """
-        return self._selected
-
-    def setSelected(self, value):
-        """
-        Sets *value*-th glyph as the selected glyph, or none if *value* is
-        None.
-
-        *value* should be less than the number of glyphRecords present in the
-        widget.
-        """
-        self._selected = value
-        if self._selected is not None and self._glyphRecordsRects is not None:
-            parent = self.parent()
-            if isinstance(parent, QScrollArea):
-                rect = None
-                for r, indexRecord in self._glyphRecordsRects.items():
-                    if indexRecord == self._selected:
-                        rect = QRectF(r)
-                        break
-                if rect is not None:
-                    parent.ensureVisible(rect)
-        self.update()
-
     # ------
     # Sizing
     # ------
@@ -391,7 +384,11 @@ class GlyphLineWidget(QWidget):
         else:
             parent = self.parent()
             curWidth = self._buffer * 2
-            visibleWidth = parent.width() if parent is not None else self.width()
+            scrollArea = self._scrollArea
+            if scrollArea:
+                visibleWidth = scrollArea.viewport().width()
+            else:
+                visibleWidth = self.width()
             lines = 1
             for glyphRecord in self._glyphRecords:
                 glyph = glyphRecord.glyph
@@ -634,7 +631,8 @@ class GlyphLineWidget(QWidget):
                 if incomingWidth > self.width() or glyph.unicode == 2029:
                     top += upm * self._lineHeight * scale
                     painter.translate(
-                        (self._buffer - left) * self._inverseScale, yDirection * upm * self._lineHeight)
+                        (self._buffer - left) * self._inverseScale,
+                        yDirection * upm * self._lineHeight)
                     left = self._buffer
             # handle offsets from the record
             top -= yP * scale
@@ -700,7 +698,8 @@ class GlyphLineWidget(QWidget):
                 if incomingLeft < 0 or glyph.unicode == 2029:
                     top += upm * self._lineHeight * scale
                     painter.translate(
-                        (self.width() - self._buffer - left) * self._inverseScale, yDirection * upm * self._lineHeight)
+                        (self.width() - self._buffer - left) * self._inverseScale,
+                        yDirection * upm * self._lineHeight)
                     left = self.width() - self._buffer
             # handle offsets from the record
             top -= yP * scale

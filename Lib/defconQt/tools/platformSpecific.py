@@ -73,10 +73,3 @@ def deleteKey():
         return Qt.Key_Backspace
     else:
         return Qt.Key_Delete
-
-# -------
-# ToolBar
-# -------
-
-def useTabBar():
-    return sys.platform == "darwin"

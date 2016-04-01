@@ -19,7 +19,8 @@ class AbstractListModel(QAbstractTableModel):
     def __init__(self, lst, parent=None):
         super().__init__(parent)
         self._headerLabels = []
-        self._setList(lst)
+
+        self.setList(lst)
 
     # implementation-specific methods
 
@@ -46,8 +47,9 @@ class AbstractListModel(QAbstractTableModel):
     def list(self):
         return list(self._list)
 
-    def _setList(self, lst):
+    def setList(self, lst):
         self._list = lst
+        self.layoutChanged.emit()
 
     def headerLabels(self):
         return list(self._headerLabels)
@@ -199,12 +201,13 @@ class OneTwoListModel(AbstractListModel):
         for index in range(row, row+count):
             del self._list[index]
 
-    def _setList(self, lst):
+    def setList(self, lst):
         self._list = lst
         if len(self._list) and isinstance(self._list[0], list):
             self._is2D = True
         else:
             self._is2D = False
+        self.layoutChanged.emit()
 
 
 class ListView(QTreeView):
@@ -318,10 +321,8 @@ class ListView(QTreeView):
             model = modelClass(lst, **kwargs)
             self.valueChanged = model.valueChanged
         else:
-            model._setList(lst)
+            model.setList(lst)
         self.setModel(model)
-        # trigger a refresh
-        model.layoutChanged.emit()
 
     def flatListInput(self):
         """

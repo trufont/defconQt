@@ -1,7 +1,8 @@
 from defconQt.tools import drawing, platformSpecific
 from defconQt.tools.drawing import colorToQColor
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor, QFontMetrics, QLinearGradient, QPainter, QPixmap
+from PyQt5.QtGui import (
+    QColor, QFontMetrics, QLinearGradient, QPainter, QPixmap)
 
 GlyphCellHeaderHeight = 14
 GlyphCellMinHeightForHeader = 40
@@ -19,15 +20,14 @@ headerFont = platformSpecific.otherUIFont()
 # TODO: allow top or bottom headers
 # TODO: fine-tune dirty appearance
 # TODO: show a symbol for content present on other layers
-# XXX: stop drawing all layers
 
 
-def GlyphCellFactory(glyph, width, height, drawMarkColor=True, drawHeader=None, drawMetrics=None):
+def GlyphCellFactory(glyph, width, height, drawLayers=False, drawMarkColor=True, drawHeader=None, drawMetrics=None):
     if drawHeader is None:
         drawHeader = height >= GlyphCellMinHeightForHeader
     if drawMetrics is None:
         drawMetrics = height >= GlyphCellMinHeightForMetrics
-    obj = GlyphCellFactoryDrawingController(glyph=glyph, font=glyph.font, width=width, height=height, drawMarkColor=drawMarkColor, drawHeader=drawHeader, drawMetrics=drawMetrics)
+    obj = GlyphCellFactoryDrawingController(glyph=glyph, font=glyph.font, width=width, height=height, drawLayers=False, drawMarkColor=drawMarkColor, drawHeader=drawHeader, drawMetrics=drawMetrics)
     return obj.getPixmap()
 
 
@@ -56,13 +56,14 @@ class GlyphCellFactoryDrawingController(object):
     """
 
     def __init__(self, glyph, font, width, height,
-                 drawMarkColor=True, drawHeader=True, drawMetrics=False):
+                 drawLayers=False, drawMarkColor=True, drawHeader=True, drawMetrics=False):
         self.glyph = glyph
         self.font = font
         self.width = width
         self.height = height
         self.bufferPercent = .15
         self.shouldDrawHeader = drawHeader
+        self.shouldDrawLayers = drawLayers
         self.shouldDrawMarkColor = drawMarkColor
         self.shouldDrawMetrics = drawMetrics
 
@@ -155,19 +156,23 @@ class GlyphCellFactoryDrawingController(object):
             painter.fillRect(*(rect+(cellMetricsFillColor,)))
 
     def drawCellGlyph(self, painter):
-        layers = self.font.layers
-        for layerName in reversed(layers.layerOrder):
-            layer = layers[layerName]
-            if self.glyph.name not in layer:
-                continue
-            layerColor = None
-            if layer.color is not None:
-                layerColor = colorToQColor(layer.color)
-            if layerColor is None:
-                layerColor = Qt.black
-            glyph = layer[self.glyph.name]
-            path = glyph.getRepresentation("defconQt.QPainterPath")
-            painter.fillPath(path, layerColor)
+        if self.shouldDrawLayers:
+            layers = self.font.layers
+            for layerName in reversed(layers.layerOrder):
+                layer = layers[layerName]
+                if self.glyph.name not in layer:
+                    continue
+                layerColor = None
+                if layer.color is not None:
+                    layerColor = colorToQColor(layer.color)
+                if layerColor is None:
+                    layerColor = Qt.black
+                glyph = layer[self.glyph.name]
+                path = glyph.getRepresentation("defconQt.QPainterPath")
+                painter.fillPath(path, layerColor)
+        else:
+            path = self.glyph.getRepresentation("defconQt.QPainterPath")
+            painter.fillPath(path, Qt.black)
 
     def drawCellForeground(self, painter, rect):
         pass

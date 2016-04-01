@@ -56,8 +56,6 @@ _defaultColors = dict(
     glyphOtherPoints=QColor.fromRgbF(.6, .6, .6, 1),
     # anchors
     glyphAnchor=QColor(228, 96, 15, 200),
-    # selection
-    glyphSelection=QColor(165, 190, 216, 155),
 )
 
 
@@ -282,8 +280,7 @@ def _drawBlues(painter, blues, rect, color):
 # Image
 
 
-def drawGlyphImage(painter, glyph, scale, rect, drawSelection=False,
-                   selectionColor=None):
+def drawGlyphImage(painter, glyph, scale, rect):
     """
     Draws a Glyph_ *glyph*’s image.
 
@@ -293,20 +290,11 @@ def drawGlyphImage(painter, glyph, scale, rect, drawSelection=False,
     pixmap = image.getRepresentation("defconQt.QPixmap")
     if pixmap is None:
         return
-    if selectionColor is None:
-        selectionColor = defaultColor("glyphSelection")
     painter.save()
     painter.setTransform(QTransform(*image.transformation), True)
-    painter.save()
     painter.translate(0, pixmap.height())
     painter.scale(1, -1)
     painter.drawPixmap(0, 0, pixmap)
-    painter.restore()
-    if drawSelection and image.selected:
-        pen = QPen(selectionColor)
-        pen.setWidthF(5.0 * scale)
-        painter.setPen(pen)
-        painter.drawRect(pixmap.rect())
     painter.restore()
 
 # Margins
@@ -342,9 +330,8 @@ def drawGlyphMargins(painter, glyph, scale, rect, drawFill=True,
 
 def drawGlyphFillAndStroke(
         painter, glyph, scale, rect, drawFill=True, drawStroke=True,
-        drawSelection=False, contourFillColor=None,
-        contourStrokeColor=None, componentFillColor=None,
-        contourStrokeWidth=1.0, selectionColor=None):
+        contourFillColor=None, contourStrokeColor=None,
+        componentFillColor=None, contourStrokeWidth=1.0):
     """
     Draws a Glyph_ *glyph* contours’ fill and stroke.
 
@@ -355,8 +342,6 @@ def drawGlyphFillAndStroke(
     layerColor = None
     if layer is not None and layer.color is not None:
         layerColor = colorToQColor(layer.color)
-    if selectionColor is None:
-        selectionColor = defaultColor("glyphSelection")
     # get the paths
     contourPath = glyph.getRepresentation("defconQt.NoComponentsQPainterPath")
     componentPath = glyph.getRepresentation(
@@ -376,14 +361,6 @@ def drawGlyphFillAndStroke(
     elif componentFillColor is None and layerColor is None:
         componentFillColor = defaultColor("glyphComponentFill")
     painter.fillPath(componentPath, QBrush(componentFillColor))
-    # selection
-    if drawSelection:
-        selectionPath = glyph.getRepresentation(
-            "TruFont.FilterSelectionQPainterPath")
-        pen = QPen(selectionColor)
-        pen.setWidthF(5.0 * scale)
-        painter.setPen(pen)
-        painter.drawPath(selectionPath)
     # stroke
     if drawStroke:
         # work out the color
@@ -404,7 +381,7 @@ def drawGlyphFillAndStroke(
 def drawGlyphPoints(
         painter, glyph, scale, rect,
         drawStartPoints=True, drawOnCurves=True, drawOffCurves=True,
-        drawCoordinates=True, drawSelection=False, onCurveColor=None,
+        drawCoordinates=True, onCurveColor=None,
         otherColor=None, backgroundColor=None):
     """
     Draws a Glyph_ *glyph*’s points.
@@ -458,7 +435,6 @@ def drawGlyphPoints(
         offWidth = 5 * scale
         offHalf = offWidth / 2.0
         path = QPainterPath()
-        selectedPath = QPainterPath()
         for point in outlineData["offCurvePoints"]:
             x, y = point["point"]
             points.append((x, y))
@@ -466,17 +442,12 @@ def drawGlyphPoints(
             x -= offHalf
             y -= offHalf
             pointPath.addEllipse(x, y, offWidth, offWidth)
-            if drawSelection and point["selected"]:
-                selectedPath.addPath(pointPath)
-            else:
-                path.addPath(pointPath)
+            path.addPath(pointPath)
         pen = QPen(otherColor)
         pen.setWidthF(3.0 * scale)
         painter.setPen(pen)
         painter.drawPath(path)
         painter.fillPath(path, QBrush(backgroundColor))
-        painter.drawPath(selectedPath)
-        painter.fillPath(selectedPath, QBrush(otherColor))
         painter.restore()
     # on curve
     if drawOnCurves and outlineData["onCurvePoints"]:
@@ -486,7 +457,6 @@ def drawGlyphPoints(
         smoothHalf = smoothWidth / 2.0
         painter.save()
         path = QPainterPath()
-        selectedPath = QPainterPath()
         for point in outlineData["onCurvePoints"]:
             x, y = point["point"]
             points.append((x, y))
@@ -499,13 +469,10 @@ def drawGlyphPoints(
                 x -= half
                 y -= half
                 pointPath.addRect(x, y, width, width)
-            if drawSelection and point["selected"]:
-                selectedPath.addPath(pointPath)
             path.addPath(pointPath)
         pen = QPen(onCurveColor)
         pen.setWidthF(1.5 * scale)
         painter.setPen(pen)
-        painter.fillPath(selectedPath, onCurveColor)
         painter.drawPath(path)
         painter.restore()
     # coordinates
@@ -534,8 +501,7 @@ def drawGlyphPoints(
 
 
 def drawGlyphAnchors(painter, glyph, scale, rect, drawAnchors=True,
-                     drawSelection=False, drawText=True, color=None,
-                     selectionColor=None):
+                     drawText=True, color=None):
     """
     Draws a Glyph_ *glyph*’s anchors.
 
@@ -545,8 +511,6 @@ def drawGlyphAnchors(painter, glyph, scale, rect, drawAnchors=True,
         return
     if color is None:
         color = defaultColor("glyphAnchor")
-    if selectionColor is None:
-        selectionColor = defaultColor("glyphSelection")
     fallbackColor = color
     anchorSize = 6 * scale
     anchorHalfSize = anchorSize / 2
@@ -564,11 +528,6 @@ def drawGlyphAnchors(painter, glyph, scale, rect, drawAnchors=True,
             path.addEllipse(x - anchorHalfSize, y - anchorHalfSize,
                             anchorSize, anchorSize)
             painter.fillPath(path, color)
-            if drawSelection and anchor.selected:
-                pen = QPen(selectionColor)
-                pen.setWidthF(5.0 * scale)
-                painter.setPen(pen)
-                painter.drawPath(path)
         if drawText and name:
             painter.setPen(color)
             # TODO: we're using + before we shift to top, ideally this should

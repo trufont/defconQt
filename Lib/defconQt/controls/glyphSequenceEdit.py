@@ -9,8 +9,7 @@ constructor.
 .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
 .. _QLineEdit: http://doc.qt.io/qt-5/qlineedit.html
 """
-from defconQt.tools.textSplitter import (
-    characterToGlyphName, compileStack, escapeText, splitText)
+from defconQt.tools.textSplitter import splitText
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QComboBox, QCompleter, QLineEdit
 
