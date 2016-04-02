@@ -605,9 +605,10 @@ class GlyphCellWidget(QWidget):
 
     def dragMoveEvent(self, event):
         pos = event.pos()
-        self._currentDropIndex = int(
+        dropIndex = int(
             self._columnCount * (pos.y() // self._cellHeight) +
             (pos.x() + .5 * self._cellWidth) // self._cellWidth)
+        self._currentDropIndex = min(dropIndex, len(self._glyphs))
         self.update()
 
     def dragLeaveEvent(self, event):

@@ -142,15 +142,17 @@ class GlyphLineWidget(QWidget):
         """
         self._selected = value
         if self._selected is not None and self._glyphRecordsRects is not None:
-            parent = self.parent()
-            if isinstance(parent, QScrollArea):
+            scrollArea = self._scrollArea
+            if scrollArea is not None:
                 rect = None
                 for r, indexRecord in self._glyphRecordsRects.items():
                     if indexRecord == self._selected:
-                        rect = QRectF(r)
+                        rect = QRectF(*r)
                         break
                 if rect is not None:
-                    parent.ensureVisible(rect)
+                    center = rect.center()
+                    scrollArea.ensureVisible(
+                        center.x(), center.y(), .6 * rect.width(), .6 * rect.height())
         self.update()
 
     def pointSize(self):

@@ -28,10 +28,12 @@ class GlyphSequenceComboBox(QComboBox):
 
     def __init__(self, font, parent=None):
         super().__init__(parent)
-        completer = QCompleter()
+        # setEditable(True) must be called before self.completer()
+        # otherwise it will return None
+        self.setEditable(True)
+        completer = self.completer()
         completer.setCaseSensitivity(Qt.CaseSensitive)
         self.setCompleter(completer)
-        self.setEditable(True)
         self._font = font
 
     glyphs = _glyphs
