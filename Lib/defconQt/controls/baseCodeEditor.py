@@ -87,32 +87,87 @@ class BaseCodeHighlighter(QSyntaxHighlighter):
     """
     A QSyntaxHighlighter_ that highlights code using QRegularExpression_
     (perl regexes).
-    Append a tuple of (pattern, format) to the *highlightingRules* attribute to
-    get started.
+    Use :func:`addRule` to add a formatting rule or :func:`addBlockRule` to add a
+    rule with start and end patterns (e.g., multiline rules).
 
-    - *pattern*: a string describing a regex.
-    - *format*: a QTextCharFormat_ describing text formatting for the given
-      block.
+    # TODO: get/remove rules?
 
     .. _QRegularExpression: http://doc.qt.io/qt-5/qregularexpression.html
     .. _QSyntaxHighlighter: http://doc.qt.io/qt-5/qsyntaxhighlighter.html
-    .. _QTextCharFormat: http://doc.qt.io/qt-5/qtextcharformat.html
     """
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.highlightingRules = []
+        self._blockHighlightingRules = []
+        self._highlightingRules = []
+        self._visited = set()
+
+    def addBlockRule(self, startPattern, endPattern, textFormat):
+        """
+        Add a block syntax highlighting rule, that begins with regex string
+        *startPattern* and ends with *endPattern* formatted according to
+        QTextCharFormat_ *format*.
+
+        .. _QTextCharFormat: http://doc.qt.io/qt-5/qtextcharformat.html
+        """
+        startRegex = QRegularExpression(startPattern)
+        endRegex = QRegularExpression(endPattern)
+        self._blockHighlightingRules.append((startRegex, endRegex, textFormat))
+
+    def addRule(self, pattern, textFormat):
+        """
+        Add a syntax highlighting rule with regex string *pattern* and
+        QTextCharFormat_ *format*.
+
+        .. _QTextCharFormat: http://doc.qt.io/qt-5/qtextcharformat.html
+        """
+        regex = QRegularExpression(pattern)
+        self._highlightingRules.append((regex, textFormat))
 
     def highlightBlock(self, text):
-        for pattern, fmt in self.highlightingRules:
-            regex = QRegularExpression(pattern)
-            i = regex.globalMatch(text)
-            while i.hasNext():
-                match = i.next()
+        self._visited = set()
+        # reset state, in case an earlier block just toggled
+        self.setCurrentBlockState(-1)
+        # block patterns
+        for ident, rules in enumerate(self._blockHighlightingRules):
+            startRegex, endRegex, textFormat = rules
+
+            startIndex = offset = 0
+            if self.previousBlockState() != ident:
+                match = startRegex.match(text)
+                startIndex = match.capturedStart()
+                offset = match.capturedLength()
+
+            while startIndex >= 0:
+               match = endRegex.match(text, startIndex + offset)
+               endIndex = match.capturedStart()
+               if endIndex == -1:
+                   self.setCurrentBlockState(ident)
+                   commentLength = len(text) - startIndex
+               else:
+                   commentLength = endIndex - startIndex + match.capturedLength()
+               self.setFormat(startIndex, commentLength, textFormat)
+               match = startRegex.match(text, startIndex + commentLength)
+               startIndex = match.capturedStart()
+               offset = match.capturedLength()
+
+        # inline patterns
+        for regex, textFormat in self._highlightingRules:
+            it = regex.globalMatch(text)
+            while it.hasNext():
+                match = it.next()
                 start = match.capturedStart()
                 length = match.capturedLength()
-                self.setFormat(start, length, fmt)
-        self.setCurrentBlockState(0)
+                self.setFormat(start, length, textFormat)
+
+    def setFormat(self, start, count, *args):
+        overlap = False
+        for s, e in self._visited:
+            if start <= e and s <= start + count:
+                overlap = True
+        self._visited.add((start, start+count))
+        if not overlap:
+            super().setFormat(start, count, *args)
 
 
 # -------------------

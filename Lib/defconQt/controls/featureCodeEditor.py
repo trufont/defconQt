@@ -42,20 +42,17 @@ class FeatureCodeHighlighter(BaseCodeHighlighter):
         super().__init__(parent)
 
         keywordFormat = QTextCharFormat()
-        keywordFormat.setForeground(QColor(34, 34, 34))
-        keywordFormat.setFontWeight(QFont.Bold)
-        self.highlightingRules.append(("[^\\\\]\\b(%s)\\b"
-                                       % ("|".join(keywordPatterns)),
-                                       keywordFormat))
+        keywordFormat.setForeground(QColor(45, 95, 235))
+        self.addRule("[^\\\\]\\b(%s)\\b" % ("|".join(keywordPatterns)),
+                     keywordFormat)
 
         singleLineCommentFormat = QTextCharFormat()
         singleLineCommentFormat.setForeground(Qt.darkGray)
-        self.highlightingRules.append(("#[^\n]*", singleLineCommentFormat))
+        self.addRule("#[^\n]*", singleLineCommentFormat)
 
         groupFormat = QTextCharFormat()
-        groupFormat.setFontWeight(QFont.Bold)
-        groupFormat.setForeground(QColor(96, 106, 161))
-        self.highlightingRules.append(("@[A-Za-z0-9_.]+", groupFormat))
+        groupFormat.setForeground(QColor(255, 27, 147))
+        self.addRule("@[A-Za-z0-9_.]+", groupFormat)
 
 
 class FeatureCodeEditor(BaseCodeEditor):

@@ -778,9 +778,9 @@ class GlyphCellView(QScrollArea):
     def selectAll(self):
         self._glyphCellWidget.selectAll()
 
-    # --------
+    # ----------
     # Qt methods
-    # --------
+    # ----------
 
     def setAcceptDrops(self, value):
         self._glyphCellWidget.setAcceptDrops(value)

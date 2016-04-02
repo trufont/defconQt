@@ -9,7 +9,6 @@ GlyphCellMinHeightForHeader = 40
 GlyphCellMinHeightForMetrics = 90
 
 cellHeaderBaseColor = QColor(230, 230, 230)
-cellHeaderHighlightColor = QColor(220, 220, 220)
 cellHeaderSidebearingsColor = QColor(240, 240, 240)
 cellHeaderLineColor = QColor(170, 170, 170)
 cellMetricsLineColor = QColor.fromRgbF(0, 0, 0, .08)
@@ -181,16 +180,11 @@ class GlyphCellFactoryDrawingController(object):
         xMin, yMin, width, height = rect
         # background
         baseColor = cellHeaderBaseColor
-        highlightColor = cellHeaderBaseColor
         sidebearingsColor = cellHeaderSidebearingsColor
         if self.glyph.dirty:
             baseColor = baseColor.darker(125)
-            highlightColor = highlightColor.darker(125)
             sidebearingsColor = sidebearingsColor.darker(110)
-        gradient = QLinearGradient(0, 0, 0, GlyphCellHeaderHeight)
-        gradient.setColorAt(0.0, baseColor)
-        gradient.setColorAt(1.0, highlightColor)
-        painter.fillRect(xMin, yMin, width, height, gradient)
+        painter.fillRect(xMin, yMin, width, height, baseColor)
         # sidebearings
         painter.fillRect(xMin, yMin, 1, height, sidebearingsColor)
         painter.fillRect(

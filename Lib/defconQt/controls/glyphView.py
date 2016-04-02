@@ -571,6 +571,8 @@ class GlyphView(QScrollArea):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.setWidgetResizable(True)
 
         self._glyphWidget = self.glyphWidgetClass(self)
