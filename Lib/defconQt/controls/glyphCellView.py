@@ -8,7 +8,8 @@ in cells with their names drawn inside headers.
 .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
 """
 from defcon import Glyph
-from PyQt5.QtCore import pyqtSignal, QMimeData, QSize, Qt
+from defconQt.tools.glyphsMimeData import GlyphsMimeData
+from PyQt5.QtCore import pyqtSignal, QSize, Qt
 from PyQt5.QtGui import (
     QColor, QCursor, QDrag, QKeySequence, QPainter, QPainterPath, QPalette)
 from PyQt5.QtWidgets import QApplication, QScrollArea, QSizePolicy, QWidget
@@ -586,11 +587,10 @@ class GlyphCellWidget(QWidget):
                 < QApplication.startDragDistance():
             return False
 
-        glyphList = " ".join(
-            glyph.name for glyph in self.glyphsForIndexes(self.selection()))
         drag = QDrag(self)
-        mimeData = QMimeData()
-        mimeData.setText(glyphList)
+        glyphs = self.glyphsForIndexes(self.selection())
+        mimeData = GlyphsMimeData()
+        mimeData.setGlyphs(glyphs)
         drag.setMimeData(mimeData)
         drag.exec_()
         self._maybeDragPosition = None
@@ -617,10 +617,7 @@ class GlyphCellWidget(QWidget):
 
     def dropEvent(self, event):
         insert = self._currentDropIndex
-        newGlyphNames = event.mimeData().text().split(" ")
-        # XXX: meh, serialize glyphs!
-        font = self._glyphs[0].font
-        newGlyphs = [font[name] for name in newGlyphNames]
+        newGlyphs = event.mimeData().glyphs()
         # put all glyphs to be moved to None (deleting them would
         # invalidate our insert indexes)
         if event.source() == self:
