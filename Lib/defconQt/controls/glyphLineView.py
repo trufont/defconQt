@@ -100,11 +100,18 @@ class GlyphLineWidget(QWidget):
 
         .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
         """
+        self._glyphRecordsRects = {}
+        if self._selected is not None:
+            selectedGlyph = self._glyphRecords[self._selected].glyph
+        else:
+            selectedGlyph = None
+        selectedIndex = None
         # set the records into the view
         self._glyphRecords = glyphRecords
         upms = []
         descenders = []
-        for glyphRecord in self._glyphRecords:
+        for index, glyphRecord in enumerate(self._glyphRecords):
+            # font metrics
             glyph = glyphRecord.glyph
             font = glyph.font
             if font is not None:
@@ -114,13 +121,15 @@ class GlyphLineWidget(QWidget):
                 descender = font.info.descender
                 if descender is not None:
                     descenders.append(descender)
+            # selection bookkeeping
+            if glyph == selectedGlyph:
+                selectedIndex = index
         if upms:
             self._upm = max(upms)
         if descenders:
             self._descender = min(descenders)
+        self.setSelected(selectedIndex)
         self._calcScale()
-        # TODO: consider transferring selection?
-        self.setSelected(None)
         self.setShowLayers(self._showLayers)
         self.adjustSize()
         self.update()

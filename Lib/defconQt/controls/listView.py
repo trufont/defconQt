@@ -55,7 +55,6 @@ class AbstractListModel(QAbstractTableModel):
         return list(self._headerLabels)
 
     def setHeaderLabels(self, labels):
-        assert len(labels) <= len(self._list)
         self._headerLabels = labels
 
     def sorted(self):
