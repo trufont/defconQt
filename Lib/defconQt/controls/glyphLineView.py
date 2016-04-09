@@ -58,6 +58,7 @@ class GlyphLineWidget(QWidget):
         self._descender = -250
         self._buffer = 15
 
+        self._drawMetrics = False
         self._verticalFlip = False
         self._lineHeight = 1.1
         self._rightToLeft = False
@@ -105,13 +106,12 @@ class GlyphLineWidget(QWidget):
             selectedGlyph = self._glyphRecords[self._selected].glyph
         else:
             selectedGlyph = None
-        selectedIndex = None
         # set the records into the view
         self._glyphRecords = glyphRecords
+        # font metrics
         upms = []
         descenders = []
         for index, glyphRecord in enumerate(self._glyphRecords):
-            # font metrics
             glyph = glyphRecord.glyph
             font = glyph.font
             if font is not None:
@@ -121,13 +121,17 @@ class GlyphLineWidget(QWidget):
                 descender = font.info.descender
                 if descender is not None:
                     descenders.append(descender)
-            # selection bookkeeping
-            if glyph == selectedGlyph:
-                selectedIndex = index
         if upms:
             self._upm = max(upms)
         if descenders:
             self._descender = min(descenders)
+        # selection
+        selectedIndex = None
+        if self._selected is not None:
+            if self._selected < len(self._glyphRecords):
+                glyph = self._glyphRecords[self._selected].glyph
+                if glyph == selectedGlyph:
+                    selectedIndex = self._selected
         self.setSelected(selectedIndex)
         self._calcScale()
         self.setShowLayers(self._showLayers)
@@ -271,6 +275,12 @@ class GlyphLineWidget(QWidget):
                         self._layerDrawingAttributes[layerName] = dict(
                             showGlyphFill=True)
         self.update()
+
+    def drawMetrics(self):
+        return self._drawMetrics
+
+    def setDrawMetrics(self, value):
+        self._drawMetrics = value
 
     def verticalFlip(self):
         """
@@ -441,6 +451,20 @@ class GlyphLineWidget(QWidget):
     # Painting
     # --------
 
+    def drawLineBackground(self, painter, rect):
+        if self._drawMetrics:
+            descender = self._descender
+            ascender = self._upm + descender
+            x, _, width, _ = rect
+            painter.save()
+            pen = painter.pen()
+            pen.setColor(QColor(45, 45, 45))
+            painter.setPen(pen)
+            drawing.drawLine(painter, x, ascender, width, ascender)
+            drawing.drawLine(painter, x, 0, width, 0)
+            drawing.drawLine(painter, x, descender, width, descender)
+            painter.restore()
+
     def drawGlyph(self, painter, glyph, rect, selected=False):
         # gather the layers
         layerSet = glyph.layerSet
@@ -576,6 +600,16 @@ class GlyphLineWidget(QWidget):
         if event.isAccepted():
             self._unsubscribeFromGlyphs()
 
+    def keyPressEvent(self, event):
+        key = event.key()
+        if key == Qt.Key_Return:
+            index = self._selected
+            if index is not None:
+                glyph = self._glyphRecords[index].glyph
+                self.glyphActivated.emit(glyph)
+        else:
+            super().keyPressEvent(event)
+
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             selected = None
@@ -603,6 +637,8 @@ class GlyphLineWidget(QWidget):
         self._glyphRecordsRects = {}
         # draw the background
         painter.fillRect(rect, self._backgroundColor)
+        if not self._glyphRecords:
+            return
         # create some reusable values
         scale = self._scale
         upm = self._upm
@@ -624,6 +660,9 @@ class GlyphLineWidget(QWidget):
         painter.translate(0, baselineShift)
         # flip
         painter.scale(1, yDirection)
+        # draw metrics lines
+        lineRect = (-self._buffer * self._inverseScale, descender, self.width() * self._inverseScale, upm)
+        self.drawLineBackground(painter, lineRect)
         # draw the records
         left = self._buffer
         top = self._buffer + .5 * lineHeightOffset * scale
@@ -645,6 +684,7 @@ class GlyphLineWidget(QWidget):
                         (self._buffer - left) * self._inverseScale,
                         yDirection * upm * self._lineHeight)
                     left = self._buffer
+                    self.drawLineBackground(painter, lineRect)
             # handle offsets from the record
             top -= yP * scale
             glyphHeight = height + ((h + yA) * scale)
@@ -766,13 +806,13 @@ class GlyphLineView(QScrollArea):
     """
     glyphLineWidgetClass = GlyphLineWidget
 
-    def __init__(self, applyKerning=False, parent=None):
+    def __init__(self, parent=None):
         super().__init__(parent)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.setWidgetResizable(True)
 
-        self._applyKerning = applyKerning
+        self._applyKerning = False
         self._glyphLineWidget = self.glyphLineWidgetClass(self)
         self._glyphLineWidget.setScrollArea(self)
         # reexport signals
@@ -907,6 +947,12 @@ class GlyphLineView(QScrollArea):
     # External API
     # ------------
 
+    def applyKerning(self):
+        return self._applyKerning
+
+    def setApplyKerning(self, value):
+        self._applyKerning = value
+
     def glyphRecords(self):
         return self._glyphLineWidget.glyphRecords()
 
@@ -974,6 +1020,18 @@ class GlyphLineView(QScrollArea):
 
     def setShowLayers(self, value):
         self._glyphLineWidget.setShowLayers(value)
+
+    def drawMetrics(self):
+        return self._glyphLineWidget.drawMetrics()
+
+    def setDrawMetrics(self, value):
+        self._glyphLineWidget.setDrawMetrics(value)
+
+    def lineHeight(self):
+        return self._glyphLineWidget.lineHeight()
+
+    def setLineHeight(self, scale):
+        self._glyphLineWidget.setLineHeight(scale)
 
     def verticalFlip(self):
         return self._glyphLineWidget.verticalFlip()

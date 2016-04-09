@@ -188,7 +188,7 @@ class GlyphWidget(QWidget):
             return
         scrollArea = self._scrollArea
         if scrollArea:
-            viewport = self._scrollArea.viewport()
+            viewport = scrollArea.viewport()
             fitHeight = viewport.height()
             fitWidth = viewport.width()
         else:

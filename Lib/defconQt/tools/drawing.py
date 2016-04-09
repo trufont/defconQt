@@ -214,9 +214,8 @@ def drawFontVerticalMetrics(painter, glyph, scale, rect, drawLines=True,
         lines.append((y, names))
     # draw lines
     if drawLines:
-        lineWidth = 1.0 * scale
         for y, names in lines:
-            drawLine(painter, xMin, y, xMax, y, lineWidth=lineWidth)
+            drawLine(painter, xMin, y, xMax, y)
     # draw text
     if drawText:
         fontSize = 9

@@ -246,6 +246,31 @@ class ListView(QTreeView):
             return None
         return model.data(index)
 
+    def dropEvent(self, event):
+        if event.source() == self:
+            # widgets bookkeeping
+            cachedWidgets = []
+            # figure out the indexes
+            dragRow = self.currentIndex().row()
+            dropRow = self.indexAt(event.pos()).row()
+            if self.dropIndicatorPosition() == QAbstractItemView.BelowItem:
+                dropRow += 1
+            # extract
+            model = self.model()
+            for col in range(model.columnCount()):
+                widget = self.indexWidget(model.index(dragRow, 0))
+                if widget:
+                    # release the widget
+                    self.editorDestroyed(widget)
+                    # store it
+                    cachedWidgets.append((col, widget))
+            super().dropEvent(event)
+            for col, widget in cachedWidgets:
+                index = model.index(dropRow, col)
+                self.setIndexWidget(index, widget)
+        else:
+            super().dropEvent(event)
+
     def removeCurrentRow(self):
         index = self.currentIndex()
         model = self.model()

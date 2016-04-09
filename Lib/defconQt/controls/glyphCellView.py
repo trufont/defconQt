@@ -13,6 +13,7 @@ from PyQt5.QtCore import pyqtSignal, QSize, Qt
 from PyQt5.QtGui import (
     QColor, QCursor, QDrag, QKeySequence, QPainter, QPainterPath, QPalette)
 from PyQt5.QtWidgets import QApplication, QScrollArea, QSizePolicy, QWidget
+import math
 import time
 import unicodedata
 
@@ -48,10 +49,6 @@ class GlyphCellWidget(QWidget):
         super().__init__(parent)
         self.setAttribute(Qt.WA_KeyCompression)
         self.setFocusPolicy(Qt.ClickFocus)
-        # clamp size to a multiple of cellWidth as specified by sizeHint()
-        # TODO: consider handling the whole size and clicking aside to
-        # empty selection
-        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self._cellWidth = 50
         self._cellHeight = 50
         self._glyphs = []
@@ -231,12 +228,7 @@ class GlyphCellWidget(QWidget):
     # ----------
 
     def minimumSizeHint(self):
-        if self._glyphs:
-            width = self._cellWidth
-            height = self._cellHeight
-        else:
-            width = height = 0
-        return QSize(width, height)
+        return self.sizeHint()
 
     def sizeHint(self):
         parent = self.parent()
@@ -245,6 +237,8 @@ class GlyphCellWidget(QWidget):
             columnCount = int(width / self._cellWidth)
             if columnCount == 0:
                 columnCount = 1
+            if columnCount > len(self._glyphs):
+                columnCount = len(self._glyphs)
             rowCount = len(self._glyphs) // columnCount
             if columnCount * rowCount < len(self._glyphs):
                 rowCount += 1
@@ -263,7 +257,12 @@ class GlyphCellWidget(QWidget):
         visibleRect = event.rect()
         columnCount, rowCount = self._columnCount, self._rowCount
         cellWidth, cellHeight = self._cellWidth, self._cellHeight
-        height, width = self.height(), self.width()
+        glyphCount = len(self._glyphs)
+        if columnCount:
+            paintHeight = math.ceil(glyphCount / columnCount) * cellHeight
+            paintWidth = min(glyphCount, columnCount) * cellWidth
+        else:
+            paintHeight = paintWidth = 0
         left = 0
         top = cellHeight
 
@@ -292,11 +291,11 @@ class GlyphCellWidget(QWidget):
                         selectionColor)
 
             left += cellWidth
-            if left + cellWidth > width:
+            if left + cellWidth > paintWidth:
                 left = 0
                 top += cellHeight
 
-        # lines
+        # lines h/v
         emptyCells = columnCount * rowCount - len(self._glyphs)
         rem = columnCount - emptyCells
         painter.setPen(gridColor)
@@ -304,28 +303,33 @@ class GlyphCellWidget(QWidget):
             top = (i * cellHeight) - .5
             # don't paint on empty cells
             if i == self._rowCount:
-                w = width - cellWidth * emptyCells - 1
+                w = paintWidth - cellWidth * emptyCells - 1
             else:
-                w = width
+                w = paintWidth - 1
             painter.drawLine(0, top, w, top)
         for i in range(1, self._columnCount+1):
             left = (i * cellWidth) - .5
             # don't paint on empty cells
             if i > rem:
-                h = height - cellHeight - 1
+                h = paintHeight - cellHeight - 1
             else:
-                h = height
+                h = paintHeight - 1
             painter.drawLine(left, 0, left, h)
 
         # drop insertion position
         dropIndex = self._currentDropIndex
         if dropIndex is not None:
-            x = (dropIndex % columnCount) * cellWidth
-            y = (dropIndex // columnCount) * cellHeight
-            # special-case the end-column
-            if self.mapFromGlobal(QCursor.pos()).y() < y:
-                x = columnCount * cellWidth
-                y -= cellHeight
+            if columnCount:
+                x = (dropIndex % columnCount) * cellWidth
+                y = (dropIndex // columnCount) * cellHeight
+                # special-case the end-column
+                if dropIndex == glyphCount and \
+                        glyphCount < self.width() // self._cellWidth or \
+                        self.mapFromGlobal(QCursor.pos()).y() < y:
+                    x = columnCount * cellWidth
+                    y -= cellHeight
+            else:
+                x = y = 0
             path = QPainterPath()
             path.addRect(x - 2, y, 3, cellHeight)
             path.addEllipse(x - 5, y - 5, 9, 9)
@@ -379,7 +383,7 @@ class GlyphCellWidget(QWidget):
             index = self._findIndexForEvent(event)
             modifiers = event.modifiers()
 
-            if index >= len(self._glyphs):
+            if index is None:
                 if not (modifiers & Qt.ControlModifier or
                         modifiers & Qt.ShiftModifier):
                     # TODO: consider setSelection(None)
@@ -405,7 +409,7 @@ class GlyphCellWidget(QWidget):
 
     def mouseMoveEvent(self, event):
         if event.buttons() & Qt.LeftButton:
-            index = self._findIndexForEvent(event)
+            index = self._findIndexForEvent(event, True)
             if index == self._lastSelectedCell:
                 return
             if self.maybeExecuteDrag(event):
@@ -441,16 +445,22 @@ class GlyphCellWidget(QWidget):
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton:
             index = self._findIndexForEvent(event)
-            if index < len(self._glyphs):
+            if index is not None:
                 self.glyphActivated.emit(self._glyphs[index])
         else:
             super().mouseDoubleClickEvent(event)
 
-    def _findIndexForEvent(self, event):
-        x = max(0, min(event.x(), self.width() - 1))
+    def _findIndexForEvent(self, event, allowAllViewport=False):
+        x, y = event.x(), event.y()
+        visibleWidth = self.width() - self.width() % self._cellWidth
+        if (not allowAllViewport or self._lastSelectedCell is None) and x >= visibleWidth:
+            return None
+        x = max(0, min(event.x(), visibleWidth - 1))
         y = max(0, min(event.y(), self.height() - 1))
         index = (y // self._cellHeight) * \
             self._columnCount + x // self._cellWidth
+        if not allowAllViewport and index >= len(self._glyphs):
+            return None
         return index
 
     # key
