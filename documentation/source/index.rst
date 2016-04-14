@@ -7,7 +7,7 @@ Welcome to defconQt's documentation!
 ====================================
 
 
-modules
+.. include:: modules.rst
 
 
 Indices and tables

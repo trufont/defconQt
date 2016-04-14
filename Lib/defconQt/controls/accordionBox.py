@@ -9,7 +9,8 @@ to reveal or hide its contents, in the form of :class:`AccordionBox`.
 only one is open at a time.
 """
 from PyQt5.QtCore import QObject
-from PyQt5.QtWidgets import QGroupBox, QProxyStyle, QStyle, QWidget
+from PyQt5.QtWidgets import (
+    QGroupBox, QProxyStyle, QStyle, QStyleOption, QWidget)
 
 __all__ = ["AccordionGroup", "AccordionBox"]
 
@@ -20,7 +21,9 @@ class AccordionProxy(QProxyStyle):
         if element == QStyle.PE_IndicatorCheckBox and isinstance(
                 widget, QGroupBox):
             element_ = QStyle.PE_IndicatorBranch
-            option_ = option.__class__(option)
+            option_ = QStyleOption()
+            option_.initFrom(widget)
+            option_.rect = option.rect
             option_.rect.translate(0, 1)
             option_.state |= QStyle.State_Children
             if widget.isChecked():

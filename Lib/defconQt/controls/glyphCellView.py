@@ -49,6 +49,7 @@ class GlyphCellWidget(QWidget):
         super().__init__(parent)
         self.setAttribute(Qt.WA_KeyCompression)
         self.setFocusPolicy(Qt.ClickFocus)
+        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self._cellWidth = 50
         self._cellHeight = 50
         self._glyphs = []
@@ -227,9 +228,6 @@ class GlyphCellWidget(QWidget):
     # Qt methods
     # ----------
 
-    def minimumSizeHint(self):
-        return self.sizeHint()
-
     def sizeHint(self):
         parent = self.parent()
         width = parent.width() if parent is not None else self.width()
@@ -303,18 +301,18 @@ class GlyphCellWidget(QWidget):
             top = (i * cellHeight) - .5
             # don't paint on empty cells
             if i == self._rowCount:
-                w = paintWidth - cellWidth * emptyCells - 1
+                w = paintWidth - cellWidth * emptyCells
             else:
-                w = paintWidth - 1
-            painter.drawLine(0, top, w, top)
+                w = paintWidth
+            painter.drawLine(0, top, w - 1, top)
         for i in range(1, self._columnCount+1):
             left = (i * cellWidth) - .5
             # don't paint on empty cells
             if i > rem:
-                h = paintHeight - cellHeight - 1
+                h = paintHeight - cellHeight
             else:
-                h = paintHeight - 1
-            painter.drawLine(left, 0, left, h)
+                h = paintHeight
+            painter.drawLine(left, 0, left, h - 1)
 
         # drop insertion position
         dropIndex = self._currentDropIndex
@@ -375,7 +373,6 @@ class GlyphCellWidget(QWidget):
             scrollArea.ensureVisible(x, y, cellWidth, cellHeight)
 
     # mouse
-    # TODO: see if the various events need manual calls to update()
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -451,15 +448,16 @@ class GlyphCellWidget(QWidget):
             super().mouseDoubleClickEvent(event)
 
     def _findIndexForEvent(self, event, allowAllViewport=False):
+        cellHeight, cellWidth = self._cellHeight, self._cellWidth
+        glyphCount = len(self._glyphs)
         x, y = event.x(), event.y()
-        visibleWidth = self.width() - self.width() % self._cellWidth
+        visibleWidth = min(glyphCount, self._columnCount) * cellWidth
         if (not allowAllViewport or self._lastSelectedCell is None) and x >= visibleWidth:
             return None
         x = max(0, min(event.x(), visibleWidth - 1))
         y = max(0, min(event.y(), self.height() - 1))
-        index = (y // self._cellHeight) * \
-            self._columnCount + x // self._cellWidth
-        if not allowAllViewport and index >= len(self._glyphs):
+        index = (y // cellHeight) * self._columnCount + x // cellWidth
+        if not allowAllViewport and index >= glyphCount:
             return None
         return index
 

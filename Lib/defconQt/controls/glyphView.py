@@ -10,7 +10,7 @@ various display parameters.
 from defconQt.tools import drawing, platformSpecific
 from PyQt5.QtCore import pyqtSignal, QPoint, QPointF, QSize, Qt
 from PyQt5.QtGui import QCursor, QPainter
-from PyQt5.QtWidgets import QScrollArea, QWidget
+from PyQt5.QtWidgets import QScrollArea, QSizePolicy, QWidget
 
 # TODO: when the scrollArea resizes, keep the view centered
 
@@ -26,6 +26,7 @@ class GlyphWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setFocusPolicy(Qt.ClickFocus)
+        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self._glyph = None
         self._scrollArea = None
 
@@ -531,9 +532,6 @@ class GlyphWidget(QWidget):
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self._calculateDrawingRect()
-
-    def minimumSizeHint(self):
-        return self.sizeHint()
 
     def sizeHint(self):
         # pick the width and height

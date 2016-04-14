@@ -7,8 +7,9 @@ lists_.
 
 .. _lists: https://docs.python.org/3/tutorial/introduction.html#lists
 """
-from PyQt5.QtCore import pyqtSignal, QAbstractTableModel, QModelIndex, Qt
-from PyQt5.QtWidgets import QAbstractItemView, QTreeView
+from defcon import Font, Glyph
+from PyQt5.QtCore import pyqtSignal, QAbstractTableModel, QItemSelectionModel, QModelIndex, Qt
+from PyQt5.QtWidgets import QAbstractItemView, QStyledItemDelegate, QTreeView
 
 __all__ = ["ListView"]
 
@@ -119,9 +120,12 @@ class AbstractListModel(QAbstractTableModel):
         return super().dropMimeData(data, action, row, 0, parent)
 
     def flags(self, index):
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable \
+        flags = Qt.ItemIsEnabled | Qt.ItemIsSelectable \
             | Qt.ItemIsDragEnabled | Qt.ItemIsDropEnabled \
             | Qt.ItemNeverHasChildren
+        if not isinstance(self.data(index), (Font, Glyph)):
+            flags |= Qt.ItemIsEditable
+        return flags
 
     def supportedDropActions(self):
         return Qt.CopyAction | Qt.MoveAction
@@ -209,30 +213,54 @@ class OneTwoListModel(AbstractListModel):
         self.layoutChanged.emit()
 
 
+class ListItemDelegate(QStyledItemDelegate):
+
+    def displayText(self, value, locale):
+        if isinstance(value, Font):
+            info = value.info
+            return "%s %s" % (info.familyName, info.styleName)
+        elif isinstance(value, Glyph):
+            return value.name
+        else:
+            return super().displayText(value, locale)
+
+
 class ListView(QTreeView):
     """
     A QTreeView_ widget that displays a Python list, whether 1D or 2D.
+
+    Besides standard types, this widget can display Font_ or Glyph_.
 
     Use *setAcceptDrops(True)* to allow reordering drag and drop.
 
     Emits *listChanged* when data changes inside the widget (when performing
     drag and drop, mostly).
 
-    # TODO: preserve widgets on drag/drop and maybe clear on setList()
+    # TODO: cleanup API and compare w QTreeWidget
+    # TODO: maybe clear widgets on setList() and try to do without setIndexWidget
     # TODO: make it possible to up/down selected row w shortcut
     # e.g. Alt+Up/Down
+
+    .. _Font: http://ts-defcon.readthedocs.org/en/ufo3/objects/font.html
+    .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
+    .. _QTreeView: http://doc.qt.io/qt-5/qtreeview.html
     """
     currentItemChanged = pyqtSignal(object)
+    selectionChanged_ = pyqtSignal()
 
     flatListModelClass = FlatListModel
     oneTwoListModelClass = OneTwoListModel
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setItemDelegate(ListItemDelegate())
         self.setRootIsDecorated(False)
         self.header().setVisible(False)
         self._flatListInput = False
         self._triggers = None
+
+    def selectionChanged(self, selected, deselected):
+        self.selectionChanged_.emit()
 
     def currentChanged(self, current, previous):
         super().currentChanged(current, previous)
@@ -271,10 +299,23 @@ class ListView(QTreeView):
         else:
             super().dropEvent(event)
 
+    def currentRow(self):
+        index = self.currentIndex()
+        data = self.model().list()
+        return data[index.row()]
+
+
     def removeCurrentRow(self):
         index = self.currentIndex()
         model = self.model()
         model.removeRow(index.row())
+
+    def selectedRows(self):
+        selectionModel = self.selectionModel()
+        if selectionModel is None:
+            return []
+        selectedRows = selectionModel.selectedRows()
+        return [index.row() for index in selectedRows]
 
     def setCurrentIndex(self, row, column):
         model = self.model()
@@ -344,9 +385,9 @@ class ListView(QTreeView):
                 modelClass = self.oneTwoListModelClass
             model = modelClass(lst, **kwargs)
             self.valueChanged = model.valueChanged
+            self.setModel(model)
         else:
             model.setList(lst)
-        self.setModel(model)
 
     def flatListInput(self):
         """

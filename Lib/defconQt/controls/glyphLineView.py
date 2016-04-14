@@ -11,7 +11,7 @@ from defcon import Glyph
 from defconQt.tools import drawing
 from PyQt5.QtCore import pyqtSignal, QRectF, QSize, Qt
 from PyQt5.QtGui import QColor, QPainter, QPalette
-from PyQt5.QtWidgets import QScrollArea, QWidget
+from PyQt5.QtWidgets import QScrollArea, QSizePolicy, QWidget
 
 
 class GlyphLineWidget(QWidget):
@@ -33,6 +33,7 @@ class GlyphLineWidget(QWidget):
         super().__init__(parent)
         self.setAttribute(Qt.WA_OpaquePaintEvent)
         self.setFocusPolicy(Qt.ClickFocus)
+        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
 
         self._showLayers = False
         self._layerDrawingAttributes = {}
@@ -391,9 +392,6 @@ class GlyphLineWidget(QWidget):
         self._scale = scale
         self._inverseScale = 1.0 / self._scale
         self._pointSize = self._upm * self._scale
-
-    def minimumSizeHint(self):
-        return self.sizeHint()
 
     def sizeHint(self):
         width = height = self._buffer * 2

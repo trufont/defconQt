@@ -13,7 +13,6 @@ such code obvious and self-contained.
 Fear not, these occurrences are rather anecdotic as you may tell from the size
 of this file.
 """
-from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QFontDatabase
 import sys
 
@@ -39,10 +38,6 @@ def fixedFont():
         font.setPointSize(11)
     return font
 
-# ---------
-# Font size
-# ---------
-
 
 def otherUIFont():
     """
@@ -57,19 +52,3 @@ def otherUIFont():
         pointSize = 8
     font.setPointSize(pointSize)
     return font
-
-# ----
-# Keys
-# ----
-
-
-def deleteKey():
-    """
-    Returns a suitable deletion Qt.Key_ for each supported platform.
-
-    .. _Qt.Key: http://doc.qt.io/qt-5/qt.html#Key-enum
-    """
-    if sys.platform == "darwin":
-        return Qt.Key_Backspace
-    else:
-        return Qt.Key_Delete
