@@ -14,8 +14,9 @@ Notes:
 
 """
 from __future__ import division, absolute_import
+import math
 from defcon import Color
-from PyQt5.QtCore import QPointF, QRectF, Qt
+from PyQt5.QtCore import QLineF, QPointF, QRectF, Qt
 from PyQt5.QtGui import (
     QBrush, QColor, QPainter, QPainterPath, QPen, QTransform)
 from PyQt5.QtWidgets import QApplication
@@ -38,6 +39,9 @@ _defaultColors = dict(
     fontVerticalMetrics=QColor.fromRgbF(.4, .4, .4, .5),
     fontPostscriptBlues=QColor.fromRgbF(.5, .7, 1, .3),
     fontPostscriptFamilyBlues=QColor.fromRgbF(1, 1, .5, .3),
+
+    # guidelines
+    fontGuideline=QColor.fromRgbF(0, 0, 1, .5),
 
     # Glyph
     # -----
@@ -226,6 +230,73 @@ def drawFontVerticalMetrics(painter, glyph, scale, rect, drawLines=True,
             y -= (fontSize / 3.5) * scale
             drawTextAtPoint(painter, text, x, y, scale)
     painter.restore()
+
+# Guidelines
+
+
+def drawFontGuidelines(painter, glyph, scale, rect, drawLines=True,
+                       drawText=True):
+    """
+    Draws the font guidelines of the Glyph_ *glyph* in the form of lines if
+    *drawLines* is true and text if *drawText* is true using QPainter_
+    *painter*.
+
+    *rect* specifies the rectangle which the lines will be drawn in (usually,
+    that of the glyph’s advance width).
+
+    .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
+    .. _QPainter: http://doc.qt.io/qt-5/qpainter.html
+    """
+    if not drawLines and not drawText:
+        return
+    font = glyph.font
+    if font is None:
+        return
+    xMin = rect[0]
+    xMax = xMin + rect[2]
+    yMin = rect[1]
+    yMax = yMin + rect[3]
+    fontSize = 9
+    for line in font.info.guidelines:
+        color = defaultColor("fontGuideline")
+        if line.color:
+            color = colorToQColor(line.color)
+        painter.save()
+        painter.setPen(color)
+        textX = 0
+        textY = 0
+        if drawLines:
+            if line.x is not None and line.y is not None and line.angle is not None:
+                # not infinity, but rect diagonal is close enough
+                diagonal = math.sqrt(rect[2]**2 + rect[3]**2)
+                angle = math.radians(line.angle)
+                x2 = math.cos(angle) * diagonal
+                y2 = math.sin(angle) * diagonal
+                drawLine(painter, line.x, line.y, x2, y2)
+
+                # find where the guideline and the glyph width/height intersect
+                line1 = QLineF(line.x, line.y, x2, y2)
+                line2 = QLineF(glyph.width + 6 * scale, yMin,
+                               glyph.width + 6 * scale, yMax)
+                line3 = QLineF(xMin, yMax / 2, xMax, yMax / 2)
+                point = QPointF()
+                result = line1.intersect(line2, point)
+                if result == QLineF.NoIntersection:
+                    line1.intersect(line3, point)
+                textX = point.x()
+                textY = point.y()
+            else:
+                if line.y is not None:
+                    drawLine(painter, xMin, line.y, xMax, line.y)
+                    textX = glyph.width + 6 * scale
+                    textY = line.y - (fontSize / 3.5) * scale
+                elif line.x is not None:
+                    drawLine(painter, line.x, yMin, line.x, yMax)
+                    textX = line.x + 6 * scale
+                    textY = yMax / 2
+        if drawText and line.name:
+            drawTextAtPoint(painter, line.name, textX, textY, scale)
+        painter.restore()
 
 # Blues
 
