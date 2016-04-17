@@ -593,11 +593,6 @@ class GlyphLineWidget(QWidget):
     # Events
     # ------
 
-    def closeEvent(self, event):
-        super().closeEvent(event)
-        if event.isAccepted():
-            self._unsubscribeFromGlyphs()
-
     def keyPressEvent(self, event):
         key = event.key()
         if key == Qt.Key_Return:
