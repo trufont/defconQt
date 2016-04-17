@@ -137,6 +137,8 @@ class GlyphCellFactoryDrawingController(object):
                      font.info.capHeight, font.info.ascender))
         painter.setPen(cellMetricsLineColor)
         for y in lines:
+            if y is None:
+                continue
             y = round((y * scale) + yMin + yOffset) - .5
             drawing.drawLine(painter, xMin, y, xMin + width, y)
 
