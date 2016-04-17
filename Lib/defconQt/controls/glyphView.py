@@ -400,6 +400,35 @@ class GlyphWidget(QWidget):
     def drawBackground(self, painter):
         pass
 
+    def drawGlyphLayer(self, painter, glyph, layerName):
+        # draw the image
+        if self.drawingAttribute("showGlyphImage", layerName):
+            self.drawImage(painter, glyph, layerName)
+        # draw the blues
+        if layerName is None and self.drawingAttribute(
+                "showFontPostscriptBlues", None):
+            self.drawBlues(painter, glyph, layerName)
+        if layerName is None and self.drawingAttribute(
+                "showFontPostscriptFamilyBlues", None):
+            self.drawFamilyBlues(painter, glyph, layerName)
+        # draw the margins
+        if self.drawingAttribute("showGlyphMargins", layerName):
+            self.drawMargins(painter, glyph, layerName)
+        # draw the vertical metrics
+        if layerName is None and self.drawingAttribute(
+                "showFontVerticalMetrics", None):
+            self.drawVerticalMetrics(painter, glyph, layerName)
+        # draw the glyph
+        if self.drawingAttribute("showGlyphFill", layerName) or \
+                self.drawingAttribute("showGlyphStroke", layerName):
+            self.drawFillAndStroke(painter, glyph, layerName)
+        if self.drawingAttribute("showGlyphOnCurvePoints", layerName) or \
+                self.drawingAttribute("showGlyphOffCurvePoints",
+                                      layerName):
+            self.drawPoints(painter, glyph, layerName)
+        if self.drawingAttribute("showGlyphAnchors", layerName):
+            self.drawAnchors(painter, glyph, layerName)
+
     def drawImage(self, painter, glyph, layerName):
         drawing.drawGlyphImage(
             painter, glyph, self._inverseScale, self._drawingRect)
@@ -499,33 +528,7 @@ class GlyphWidget(QWidget):
 
         self.drawBackground(painter)
         for glyph, layerName in layers:
-            # draw the image
-            if self.drawingAttribute("showGlyphImage", layerName):
-                self.drawImage(painter, glyph, layerName)
-            # draw the blues
-            if layerName is None and self.drawingAttribute(
-                    "showFontPostscriptBlues", None):
-                self.drawBlues(painter, glyph, layerName)
-            if layerName is None and self.drawingAttribute(
-                    "showFontPostscriptFamilyBlues", None):
-                self.drawFamilyBlues(painter, glyph, layerName)
-            # draw the margins
-            if self.drawingAttribute("showGlyphMargins", layerName):
-                self.drawMargins(painter, glyph, layerName)
-            # draw the vertical metrics
-            if layerName is None and self.drawingAttribute(
-                    "showFontVerticalMetrics", None):
-                self.drawVerticalMetrics(painter, glyph, layerName)
-            # draw the glyph
-            if self.drawingAttribute("showGlyphFill", layerName) or \
-                    self.drawingAttribute("showGlyphStroke", layerName):
-                self.drawFillAndStroke(painter, glyph, layerName)
-            if self.drawingAttribute("showGlyphOnCurvePoints", layerName) or \
-                    self.drawingAttribute("showGlyphOffCurvePoints",
-                                          layerName):
-                self.drawPoints(painter, glyph, layerName)
-            if self.drawingAttribute("showGlyphAnchors", layerName):
-                self.drawAnchors(painter, glyph, layerName)
+            self.drawGlyphLayer(painter, glyph, layerName)
         self.drawForeground(painter)
         painter.restore()
 
