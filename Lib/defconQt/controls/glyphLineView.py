@@ -458,8 +458,10 @@ class GlyphLineWidget(QWidget):
             pen = painter.pen()
             pen.setColor(QColor(45, 45, 45))
             painter.setPen(pen)
-            drawing.drawLine(painter, x, ascender, width, ascender)
             drawing.drawLine(painter, x, 0, width, 0)
+            pen.setColor(QColor(189, 189, 189))
+            painter.setPen(pen)
+            drawing.drawLine(painter, x, ascender, width, ascender)
             drawing.drawLine(painter, x, descender, width, descender)
             painter.restore()
 
@@ -637,7 +639,8 @@ class GlyphLineWidget(QWidget):
         upm = self._upm
         descender = self._descender
         ascender = upm + descender
-        lineHeightOffset = (self._lineHeight - 1) * upm
+        integralLineHeight = round(self._lineHeight * self._pointSize)/self._pointSize
+        lineHeightOffset = (integralLineHeight - 1) * upm
         # offset for the buffer
         painter.save()
         painter.translate(self._buffer, self._buffer)
@@ -650,7 +653,7 @@ class GlyphLineWidget(QWidget):
             baselineShift += ascender
             yDirection = -1
         painter.scale(scale, scale)
-        painter.translate(0, baselineShift)
+        painter.translate(0, round(baselineShift*scale)/scale)
         # flip
         painter.scale(1, yDirection)
         # draw metrics lines
@@ -672,10 +675,10 @@ class GlyphLineWidget(QWidget):
             if self._wrapLines:
                 incomingWidth = left + (w + xP + xA) * scale + self._buffer
                 if incomingWidth > self.width() or glyph.unicode == 2029:
-                    top += upm * self._lineHeight * scale
+                    top += upm * integralLineHeight * scale
                     painter.translate(
                         (self._buffer - left) * self._inverseScale,
-                        yDirection * upm * self._lineHeight)
+                        yDirection * upm * integralLineHeight)
                     left = self._buffer
                     self.drawLineBackground(painter, lineRect)
             # handle offsets from the record
