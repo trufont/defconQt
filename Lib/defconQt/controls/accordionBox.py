@@ -8,6 +8,7 @@ to reveal or hide its contents, in the form of :class:`AccordionBox`.
 :class:`AccordionGroup` is a set of AccordionBox that can be used to ensure
 only one is open at a time.
 """
+from __future__ import absolute_import
 from PyQt5.QtCore import QObject
 from PyQt5.QtWidgets import (
     QGroupBox, QProxyStyle, QStyle, QStyleOption, QWidget)
@@ -28,9 +29,9 @@ class AccordionProxy(QProxyStyle):
             option_.state |= QStyle.State_Children
             if widget.isChecked():
                 option_.state |= QStyle.State_Open
-            super().drawPrimitive(element_, option_, painter, widget)
+            super(AccordionProxy, self).drawPrimitive(element_, option_, painter, widget)
         else:
-            super().drawPrimitive(element, option, painter, widget)
+            super(AccordionProxy, self).drawPrimitive(element, option, painter, widget)
 
 
 class AccordionGroup(QObject):
@@ -62,7 +63,7 @@ class AccordionGroup(QObject):
     """
 
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super(AccordionGroup, self).__init__(parent)
         self._accordions = set()
         self._currentAccordion = None
         self._exclusive = True
@@ -161,7 +162,7 @@ class AccordionBox(QGroupBox):
     """
 
     def __init__(self, title=None, parent=None):
-        super().__init__(title, parent)
+        super(AccordionBox, self).__init__(title, parent)
         self.setCheckable(True)
         self.setFlat(True)
         self.setStyle(AccordionProxy())

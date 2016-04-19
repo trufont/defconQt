@@ -7,6 +7,7 @@ and a corresponding syntax highlighter.
 
 .. _`feature file`: http://www.adobe.com/devnet/opentype/afdko/topic_feature_file_syntax.html
 """
+from __future__ import absolute_import
 from defconQt.controls.baseCodeEditor import (
     BaseCodeEditor, BaseCodeHighlighter)
 from PyQt5.QtCore import Qt
@@ -39,7 +40,7 @@ keywordPatterns = [
 class FeatureCodeHighlighter(BaseCodeHighlighter):
 
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super(FeatureCodeHighlighter, self).__init__(parent)
 
         keywordFormat = QTextCharFormat()
         keywordFormat.setForeground(QColor(45, 95, 235))
@@ -71,7 +72,7 @@ class FeatureCodeEditor(BaseCodeEditor):
     openBlockDelimiter = '{'
 
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super(FeatureCodeEditor, self).__init__(parent)
         self.highlighter = FeatureCodeHighlighter(self.document())
 
     def write(self, features):
@@ -134,7 +135,7 @@ class FeatureCodeEditor(BaseCodeEditor):
                 self.setTextCursor(cursor)
             cursor.endEditBlock()
         else:
-            super().keyPressEvent(event)
+            super(FeatureCodeEditor, self).keyPressEvent(event)
 
     def dragEnterEvent(self, event):
         if event.source() != self:
@@ -147,7 +148,7 @@ class FeatureCodeEditor(BaseCodeEditor):
                         event.acceptProposedAction()
                         break
                 return
-        super().dragEnterEvent(event)
+        super(FeatureCodeEditor, self).dragEnterEvent(event)
 
     def dropEvent(self, event):
         if event.source() != self:
@@ -170,4 +171,4 @@ class FeatureCodeEditor(BaseCodeEditor):
                 event = event.__class__(
                     event.posF(), event.possibleActions(), mimeData,
                     event.mouseButtons(), event.keyboardModifiers())
-        super().dropEvent(event)
+        super(FeatureCodeEditor, self).dropEvent(event)

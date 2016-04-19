@@ -7,6 +7,7 @@ The *glyphLineView* submodule provides widgets that render a list of Glyph_ or
 
 .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
 """
+from __future__ import division, absolute_import
 from defcon import Glyph
 from defconQt.tools import drawing
 from PyQt5.QtCore import pyqtSignal, QRectF, QSize, Qt
@@ -30,7 +31,7 @@ class GlyphLineWidget(QWidget):
     selectionModified = pyqtSignal(object)
 
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super(GlyphLineWidget, self).__init__(parent)
         self.setAttribute(Qt.WA_OpaquePaintEvent)
         self.setFocusPolicy(Qt.ClickFocus)
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
@@ -444,7 +445,7 @@ class GlyphLineWidget(QWidget):
                 glyphRecord = self._glyphRecords[self._selected]
                 self.glyphActivated.emit(glyphRecord.glyph)
         else:
-            super().mouseDoubleClickEvent(event)
+            super(GlyphLineWidget, self).mouseDoubleClickEvent(event)
 
     def wheelEvent(self, event):
         if event.modifiers() & Qt.ControlModifier:
@@ -455,7 +456,7 @@ class GlyphLineWidget(QWidget):
             self.setPointSize(pointSize)
             self.pointSizeModified.emit(pointSize)
         else:
-            super().wheelEvent(event)
+            super(GlyphLineWidget, self).wheelEvent(event)
 
     # --------
     # Painting
@@ -613,7 +614,7 @@ class GlyphLineWidget(QWidget):
                 glyph = self._glyphRecords[index].glyph
                 self.glyphActivated.emit(glyph)
         else:
-            super().keyPressEvent(event)
+            super(GlyphLineWidget, self).keyPressEvent(event)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -627,7 +628,7 @@ class GlyphLineWidget(QWidget):
             self.selectionModified.emit(self._selected)
             self.update()
         else:
-            super().mousePressEvent(event)
+            super(GlyphLineWidget, self).mousePressEvent(event)
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -820,7 +821,7 @@ class GlyphLineView(QScrollArea):
     glyphLineWidgetClass = GlyphLineWidget
 
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super(GlyphLineView, self).__init__(parent)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.setWidgetResizable(True)

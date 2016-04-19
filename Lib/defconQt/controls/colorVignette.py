@@ -2,6 +2,7 @@
 The *colorVignette* submodule
 -----------------------------
 """
+from __future__ import absolute_import
 from PyQt5.QtCore import pyqtSignal, QSize, Qt
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (
@@ -26,7 +27,7 @@ class ColorVignette(QWidget):
     colorChanged = pyqtSignal()
 
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super(ColorVignette, self).__init__(parent)
         self.setFocusPolicy(Qt.StrongFocus)
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self._color = None
@@ -125,13 +126,13 @@ class ColorVignette(QWidget):
             else:
                 self.pickColor()
         else:
-            super().keyPressEvent(event)
+            super(ColorVignette, self).keyPressEvent(event)
 
     def mousePressEvent(self, event):
         if self._mayClearColor and event.modifiers() & Qt.AltModifier:
             self.setColor(None)
         else:
-            super().mousePressEvent(event)
+            super(ColorVignette, self).mousePressEvent(event)
 
     def mouseDoubleClickEvent(self, event):
         self.pickColor()

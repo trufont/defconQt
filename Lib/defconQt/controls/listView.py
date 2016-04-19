@@ -7,6 +7,7 @@ lists_.
 
 .. _lists: https://docs.python.org/3/tutorial/introduction.html#lists
 """
+from __future__ import absolute_import
 from defcon import Font, Glyph
 from PyQt5.QtCore import pyqtSignal, QAbstractTableModel, QItemSelectionModel, QModelIndex, Qt
 from PyQt5.QtWidgets import QAbstractItemView, QStyledItemDelegate, QTreeView
@@ -18,7 +19,7 @@ class AbstractListModel(QAbstractTableModel):
     valueChanged = pyqtSignal(QModelIndex, object, object)
 
     def __init__(self, lst, parent=None):
-        super().__init__(parent)
+        super(AbstractListModel, self).__init__(parent)
         self._headerLabels = []
 
         self.setList(lst)
@@ -82,7 +83,7 @@ class AbstractListModel(QAbstractTableModel):
             self.valueChanged.emit(index, oldValue, value)
             self.dataChanged.emit(index, index, [role])
             return True
-        return super().setData(index, value, role)
+        return super(AbstractListModel, self).setData(index, value, role)
 
     def columnCount(self, parent=QModelIndex()):
         # flat table
@@ -117,7 +118,7 @@ class AbstractListModel(QAbstractTableModel):
             return False
         # force column 0, we want to drag column onto the start of the
         # drop spot, otherwise it will be split between two new columns
-        return super().dropMimeData(data, action, row, 0, parent)
+        return super(AbstractListModel, self).dropMimeData(data, action, row, 0, parent)
 
     def flags(self, index):
         flags = Qt.ItemIsEnabled | Qt.ItemIsSelectable \
@@ -136,13 +137,13 @@ class AbstractListModel(QAbstractTableModel):
                 return None
             else:
                 return self._headerLabels[section]
-        return super().headerData(section, orientation, role)
+        return super(AbstractListModel, self).headerData(section, orientation, role)
 
 
 class FlatListModel(AbstractListModel):
 
     def __init__(self, lst, columnCount=1, parent=None):
-        super().__init__(lst, parent)
+        super(FlatListModel, self).__init__(lst, parent)
         self._columns = columnCount
 
     def _data(self, row, column):
@@ -222,7 +223,7 @@ class ListItemDelegate(QStyledItemDelegate):
         elif isinstance(value, Glyph):
             return value.name
         else:
-            return super().displayText(value, locale)
+            return super(ListItemDelegate, self).displayText(value, locale)
 
 
 class ListView(QTreeView):
@@ -252,7 +253,7 @@ class ListView(QTreeView):
     oneTwoListModelClass = OneTwoListModel
 
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super(ListView, self).__init__(parent)
         self.setItemDelegate(ListItemDelegate())
         self.setRootIsDecorated(False)
         self.header().setVisible(False)
@@ -263,7 +264,7 @@ class ListView(QTreeView):
         self.selectionChanged_.emit()
 
     def currentChanged(self, current, previous):
-        super().currentChanged(current, previous)
+        super(ListView, self).currentChanged(current, previous)
         model = self.model()
         self.currentItemChanged.emit(model.data(current))
 
@@ -292,12 +293,12 @@ class ListView(QTreeView):
                     self.editorDestroyed(widget)
                     # store it
                     cachedWidgets.append((col, widget))
-            super().dropEvent(event)
+            super(ListView, self).dropEvent(event)
             for col, widget in cachedWidgets:
                 index = model.index(dropRow, col)
                 self.setIndexWidget(index, widget)
         else:
-            super().dropEvent(event)
+            super(ListView, self).dropEvent(event)
 
     def currentRow(self):
         index = self.currentIndex()
@@ -322,7 +323,7 @@ class ListView(QTreeView):
         if model is None:
             return
         index = model.index(row, column)
-        super().setCurrentIndex(index)
+        super(ListView, self).setCurrentIndex(index)
 
     def setEditable(self, value):
         """

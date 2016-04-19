@@ -9,6 +9,7 @@ constructor.
 .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
 .. _QLineEdit: http://doc.qt.io/qt-5/qlineedit.html
 """
+from __future__ import absolute_import
 from defconQt.tools.textSplitter import splitText
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QComboBox, QCompleter, QLineEdit
@@ -27,7 +28,7 @@ class GlyphSequenceComboBox(QComboBox):
     splitTextFunction = staticmethod(splitText)
 
     def __init__(self, font, parent=None):
-        super().__init__(parent)
+        super(GlyphSequenceComboBox, self).__init__(parent)
         # setEditable(True) must be called before self.completer()
         # otherwise it will return None
         self.setEditable(True)
@@ -49,7 +50,7 @@ class GlyphSequenceEdit(QLineEdit):
     splitTextFunction = staticmethod(splitText)
 
     def __init__(self, font, parent=None):
-        super().__init__(parent)
+        super(GlyphSequenceEdit, self).__init__(parent)
         self._font = font
 
     glyphs = _glyphs
