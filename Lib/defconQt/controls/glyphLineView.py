@@ -68,6 +68,7 @@ class GlyphLineWidget(QWidget):
         self._backgroundColor = Qt.white
         self._glyphColor = Qt.black
         self._glyphSelectionColor = None
+        self._metricsColor = QColor(60, 60, 60)
         self._notdefBackgroundColor = QColor(255, 204, 204)
 
         self._glyphRecords = []
@@ -217,6 +218,14 @@ class GlyphLineWidget(QWidget):
         .. _QColor: http://doc.qt.io/qt-5/qcolor.html
         """
         self._glyphColor = color
+        self.update()
+
+    def metricsColor(self):
+        return self._metricsColor
+
+    def setMetricsColor(self, color):
+        self._metricsColor = color
+        self.update()
 
     def backgroundColor(self):
         """
@@ -234,6 +243,7 @@ class GlyphLineWidget(QWidget):
         .. _QColor: http://doc.qt.io/qt-5/qcolor.html
         """
         self._backgroundColor = color
+        self.update()
 
     def notdefBackgroundColor(self):
         """
@@ -251,6 +261,7 @@ class GlyphLineWidget(QWidget):
         .. _QColor: http://doc.qt.io/qt-5/qcolor.html
         """
         self._notdefBackgroundColor = color
+        self.update()
 
     def showLayers(self):
         """
@@ -282,6 +293,7 @@ class GlyphLineWidget(QWidget):
 
     def setDrawMetrics(self, value):
         self._drawMetrics = value
+        self.update()
 
     def verticalFlip(self):
         """
@@ -456,7 +468,7 @@ class GlyphLineWidget(QWidget):
             x, _, width, _ = rect
             painter.save()
             pen = painter.pen()
-            pen.setColor(QColor(45, 45, 45))
+            pen.setColor(self._metricsColor)
             painter.setPen(pen)
             drawing.drawLine(painter, x, ascender, width, ascender)
             drawing.drawLine(painter, x, 0, width, 0)
@@ -637,7 +649,8 @@ class GlyphLineWidget(QWidget):
         upm = self._upm
         descender = self._descender
         ascender = upm + descender
-        lineHeightOffset = (self._lineHeight - 1) * upm
+        lineHeight = _roundScale(self._lineHeight, self._pointSize)
+        lineHeightOffset = (lineHeight - 1) * upm
         # offset for the buffer
         painter.save()
         painter.translate(self._buffer, self._buffer)
@@ -649,6 +662,7 @@ class GlyphLineWidget(QWidget):
         else:
             baselineShift += ascender
             yDirection = -1
+        baselineShift = _roundScale(baselineShift, scale)
         painter.scale(scale, scale)
         painter.translate(0, baselineShift)
         # flip
@@ -672,10 +686,10 @@ class GlyphLineWidget(QWidget):
             if self._wrapLines:
                 incomingWidth = left + (w + xP + xA) * scale + self._buffer
                 if incomingWidth > self.width() or glyph.unicode == 2029:
-                    top += upm * self._lineHeight * scale
+                    top += upm * lineHeight * scale
                     painter.translate(
                         (self._buffer - left) * self._inverseScale,
-                        yDirection * upm * self._lineHeight)
+                        yDirection * upm * lineHeight)
                     left = self._buffer
                     self.drawLineBackground(painter, lineRect)
             # handle offsets from the record
@@ -707,7 +721,8 @@ class GlyphLineWidget(QWidget):
         upm = self._upm
         descender = self._descender
         ascender = upm + descender
-        lineHeightOffset = (self._lineHeight - 1) * upm
+        lineHeight = _roundScale(self._lineHeight, self._pointSize)
+        lineHeightOffset = (lineHeight - 1) * upm
         # offset for the buffer
         painter.save()
         painter.translate(self.width() - self._buffer, self._buffer)
@@ -719,6 +734,7 @@ class GlyphLineWidget(QWidget):
         else:
             baselineShift += ascender
             yDirection = -1
+        baselineShift = _roundScale(baselineShift, scale)
         painter.scale(scale, scale)
         painter.translate(0, baselineShift)
         # flip
@@ -740,10 +756,10 @@ class GlyphLineWidget(QWidget):
             if self._wrapLines:
                 incomingLeft = left - (w + xP + xA) * scale - self._buffer
                 if incomingLeft < 0 or glyph.unicode == 2029:
-                    top += upm * self._lineHeight * scale
+                    top += upm * lineHeight * scale
                     painter.translate(
                         (self.width() - self._buffer - left) * self._inverseScale,
-                        yDirection * upm * self._lineHeight)
+                        yDirection * upm * lineHeight)
                     left = self.width() - self._buffer
             # handle offsets from the record
             top -= yP * scale
@@ -766,6 +782,10 @@ class GlyphLineWidget(QWidget):
             left -= (w + xP + xA) * scale
             previousXA = xA
         painter.restore()
+
+
+def _roundScale(value, scale):
+    return round(value * scale) / scale
 
 
 class GlyphLineView(QScrollArea):
