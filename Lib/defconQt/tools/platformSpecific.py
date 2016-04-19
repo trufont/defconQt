@@ -13,6 +13,7 @@ such code obvious and self-contained.
 Fear not, these occurrences are rather anecdotic as you may tell from the size
 of this file.
 """
+from __future__ import absolute_import
 from PyQt5.QtGui import QFont, QFontDatabase
 import sys
 

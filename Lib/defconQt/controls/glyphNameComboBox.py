@@ -8,6 +8,7 @@ autocompletion from a Font_’s glyph names.
 .. _Font: http://ts-defcon.readthedocs.org/en/ufo3/objects/font.html
 .. _QComboBox: http://doc.qt.io/qt-5/qcombobox.html
 """
+from __future__ import absolute_import
 from defconQt.tools.textSplitter import splitText
 from PyQt5.QtCore import QStringListModel
 from PyQt5.QtWidgets import QCompleter, QComboBox
@@ -18,7 +19,7 @@ __all__ = ["GlyphNameComboBox"]
 class GlyphNameCompleter(QCompleter):
 
     def __init__(self, font, parent=None):
-        super().__init__(parent)
+        super(GlyphNameCompleter, self).__init__(parent)
         self._font = font
         self.setCompletionMode(QCompleter.InlineCompletion)
 
@@ -46,7 +47,7 @@ class GlyphNameComboBox(QComboBox):
     splitTextFunction = splitText
 
     def __init__(self, font, parent=None):
-        super().__init__(parent)
+        super(GlyphNameComboBox, self).__init__(parent)
         self.setEditable(True)
         completer = GlyphNameCompleter(font)
         self.setCompleter(completer)

@@ -12,6 +12,7 @@ Notes:
 - The *rect* argument is the rect that the glyph is being drawn in
 
 """
+from __future__ import division, absolute_import
 from defcon import Color
 from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import (

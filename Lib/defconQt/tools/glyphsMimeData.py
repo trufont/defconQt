@@ -1,9 +1,10 @@
+from __future__ import absolute_import
 from PyQt5.QtCore import QMimeData
 
 
 class GlyphsMimeData(QMimeData):
     def __init__(self):
-        super().__init__()
+        super(GlyphsMimeData, self).__init__()
         # we don't need to serialize until we want to do cross-app dnd
         self._glyphs = []
 
@@ -18,16 +19,16 @@ class GlyphsMimeData(QMimeData):
     # ----------
 
     def formats(self):
-        formats = super().formats()
+        formats = super(GlyphsMimeData, self).formats()
         formats.append("text/plain")
         return formats
 
     def hasFormat(self, format_):
         if format_ == "text/plain":
             return True
-        return super().hasFormat(format_)
+        return super(GlyphsMimeData, self).hasFormat(format_)
 
     def retrieveData(self, mimeType, type_):
         if mimeType == "text/plain":
             return " ".join(glyph.name for glyph in self._glyphs)
-        return super().retrieveData(mimeType, type_)
+        return super(GlyphsMimeData, self).retrieveData(mimeType, type_)

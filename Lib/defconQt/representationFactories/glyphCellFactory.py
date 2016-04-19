@@ -1,3 +1,4 @@
+from __future__ import division, absolute_import
 from defconQt.tools import drawing, platformSpecific
 from defconQt.tools.drawing import colorToQColor
 from PyQt5.QtCore import Qt

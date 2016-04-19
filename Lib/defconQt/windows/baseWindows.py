@@ -29,6 +29,7 @@ its documentation for more details.
 .. _QMainWindow: http://doc.qt.io/qt-5/qmainwindow.html
 .. _`Garbage Collector`: https://en.wikipedia.org/wiki/Garbage_collection_(computer_science)
 """
+from __future__ import absolute_import
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget
 
@@ -50,12 +51,12 @@ class BaseMainWindow(QMainWindow):
     """
 
     def __init__(self, parent=None, flags=Qt.Window):
-        super().__init__(parent, flags)
+        super(BaseMainWindow, self).__init__(parent, flags)
         self.setAttribute(Qt.WA_DeleteOnClose)
         _bootstrapGCCache(self)
 
     def closeEvent(self, event):
-        super().closeEvent(event)
+        super(BaseMainWindow, self).closeEvent(event)
         if event.isAccepted():
             app = QApplication.instance()
             app._windowCache.remove(self)
@@ -73,12 +74,12 @@ class BaseWindow(QWidget):
     """
 
     def __init__(self, parent=None, flags=Qt.Window):
-        super().__init__(parent, flags)
+        super(BaseWindow, self).__init__(parent, flags)
         self.setAttribute(Qt.WA_DeleteOnClose)
         _bootstrapGCCache(self)
 
     def closeEvent(self, event):
-        super().closeEvent(event)
+        super(BaseWindow, self).closeEvent(event)
         if event.isAccepted():
             app = QApplication.instance()
             app._windowCache.remove(self)

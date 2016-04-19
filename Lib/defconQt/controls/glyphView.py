@@ -7,6 +7,7 @@ various display parameters.
 
 .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
 """
+from __future__ import division, absolute_import
 from defconQt.tools import drawing, platformSpecific
 from PyQt5.QtCore import pyqtSignal, QPoint, QPointF, QSize, Qt
 from PyQt5.QtGui import QCursor, QPainter
@@ -24,7 +25,7 @@ class GlyphWidget(QWidget):
     pointSizeChanged = pyqtSignal(int)
 
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super(GlyphWidget, self).__init__(parent)
         self.setFocusPolicy(Qt.ClickFocus)
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self._glyph = None
@@ -533,7 +534,7 @@ class GlyphWidget(QWidget):
         painter.restore()
 
     def resizeEvent(self, event):
-        super().resizeEvent(event)
+        super(GlyphWidget, self).resizeEvent(event)
         self._calculateDrawingRect()
 
     def sizeHint(self):
@@ -555,7 +556,7 @@ class GlyphWidget(QWidget):
         return QSize(width, height)
 
     def showEvent(self, event):
-        super().showEvent(event)
+        super(GlyphWidget, self).showEvent(event)
         self._calculateDrawingRect()
         self.fitScaleBBox()
 
@@ -564,14 +565,14 @@ class GlyphWidget(QWidget):
             step = event.angleDelta().y() / 120.0
             self.zoom(step, event.pos())
         else:
-            super().wheelEvent(event)
+            super(GlyphWidget, self).wheelEvent(event)
 
 
 class GlyphView(QScrollArea):
     glyphWidgetClass = GlyphWidget
 
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super(GlyphView, self).__init__(parent)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.setWidgetResizable(True)

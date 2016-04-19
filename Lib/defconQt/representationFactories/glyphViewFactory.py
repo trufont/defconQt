@@ -8,6 +8,7 @@ handles, components etc.).
 
 .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
 """
+from __future__ import division, absolute_import
 from fontTools.pens.basePen import BasePen
 from fontTools.pens.transformPen import TransformPen
 from fontTools.pens.qtPen import QtPen
@@ -49,7 +50,7 @@ def OnlyComponentsQPainterPathFactory(glyph):
 class OnlyComponentsQtPen(BasePen):
 
     def __init__(self, glyphSet):
-        super().__init__(glyphSet)
+        super(OnlyComponentsQtPen, self).__init__(glyphSet)
         self.pen = QtPen(glyphSet)
         self.path = self.pen.path
 
