@@ -147,8 +147,8 @@ class GlyphCellFactoryDrawingController(object):
         glyph = self.glyph
         scale = self.scale
         xOffset = self.xOffset
-        left = round((0 * scale) + xMin + xOffset) - .5
-        right = round((glyph.width * scale) + xMin + xOffset) - .5
+        left = round((0 * scale) + xMin + xOffset)
+        right = round((glyph.width * scale) + xMin + xOffset)
         rects = [
             (xMin, yMin, left - xMin, height),
             (xMin + right, yMin, width - xMin + right, height)
