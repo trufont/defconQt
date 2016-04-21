@@ -141,17 +141,17 @@ class BaseCodeHighlighter(QSyntaxHighlighter):
                 offset = match.capturedLength()
 
             while startIndex >= 0:
-               match = endRegex.match(text, startIndex + offset)
-               endIndex = match.capturedStart()
-               if endIndex == -1:
-                   self.setCurrentBlockState(ident)
-                   commentLength = len(text) - startIndex
-               else:
-                   commentLength = endIndex - startIndex + match.capturedLength()
-               self.setFormat(startIndex, commentLength, textFormat)
-               match = startRegex.match(text, startIndex + commentLength)
-               startIndex = match.capturedStart()
-               offset = match.capturedLength()
+                match = endRegex.match(text, startIndex + offset)
+                endIndex = match.capturedStart()
+                if endIndex == -1:
+                    self.setCurrentBlockState(ident)
+                    commentLength = len(text) - startIndex
+                else:
+                    commentLength = endIndex - startIndex + match.capturedLength()
+                self.setFormat(startIndex, commentLength, textFormat)
+                match = startRegex.match(text, startIndex + commentLength)
+                startIndex = match.capturedStart()
+                offset = match.capturedLength()
 
         # inline patterns
         for regex, textFormat in self._highlightingRules:

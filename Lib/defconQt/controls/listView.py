@@ -10,7 +10,7 @@ lists_.
 """
 from __future__ import absolute_import
 from defcon import Font, Glyph
-from PyQt5.QtCore import pyqtSignal, QAbstractTableModel, QItemSelectionModel, QModelIndex, Qt
+from PyQt5.QtCore import pyqtSignal, QAbstractTableModel, QModelIndex, Qt
 from PyQt5.QtWidgets import QAbstractItemView, QStyledItemDelegate, QTreeView
 
 __all__ = ["ListView"]

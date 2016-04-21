@@ -415,7 +415,6 @@ class GlyphLineWidget(QWidget):
                           glyphRecord.xAdvance) * self._scale
             height += self._pointSize * self._lineHeight
         else:
-            parent = self.parent()
             curWidth = self._buffer * 2
             scrollArea = self._scrollArea
             if scrollArea:

@@ -264,13 +264,13 @@ def drawFontGuidelines(painter, glyph, scale, rect, drawLines=True,
         painter.setPen(color)
         line1 = None
         if None not in (line.x, line.y, line.angle):
-            # make an infinite line of angle *360-angle* that intersects *(line.x, line.y)*
+            # make an infinite line that intersects *(line.x, line.y)*
             # 1. make horizontal line from *(line.x, line.y)* of length *diagonal*
             diagonal = math.sqrt(width**2 + height**2)
             line1 = QLineF(line.x, line.y, line.x + diagonal, line.y)
             # 2. set the angle
             # defcon guidelines are clockwise
-            line1.setAngle(360 - line.angle)
+            line1.setAngle(line.angle)
             # 3. reverse the line and set length to 2 * *diagonal*
             line1.setPoints(line1.p2(), line1.p1())
             line1.setLength(2 * diagonal)

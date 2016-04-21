@@ -12,8 +12,7 @@ from __future__ import absolute_import
 from defconQt.controls.baseCodeEditor import (
     BaseCodeEditor, BaseCodeHighlighter)
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import (
-    QColor, QFont, QTextCharFormat, QTextCursor)
+from PyQt5.QtGui import QColor, QTextCharFormat, QTextCursor
 import os
 
 # TODO: maybe move to tools/.

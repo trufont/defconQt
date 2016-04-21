@@ -13,7 +13,7 @@ constructor.
 from __future__ import absolute_import
 from defconQt.tools.textSplitter import splitText
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QComboBox, QCompleter, QLineEdit
+from PyQt5.QtWidgets import QComboBox, QLineEdit
 
 
 def _glyphs(self):
