@@ -247,15 +247,14 @@ def drawFontGuidelines(painter, glyph, scale, rect, drawLines=True,
     .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
     .. _QPainter: http://doc.qt.io/qt-5/qpainter.html
     """
-    if not drawLines and not drawText:
+    if not (drawLines or drawText):
         return
     font = glyph.font
     if font is None:
         return
-    xMin = rect[0]
-    xMax = xMin + rect[2]
-    yMin = rect[1]
-    yMax = yMin + rect[3]
+    xMin, yMin, width, height = rect
+    xMax = xMin + width
+    yMax = yMin + height
     fontSize = 9
     for line in font.info.guidelines:
         color = defaultColor("fontGuideline")
@@ -263,19 +262,31 @@ def drawFontGuidelines(painter, glyph, scale, rect, drawLines=True,
             color = colorToQColor(line.color)
         painter.save()
         painter.setPen(color)
+        line1 = None
+        if None not in (line.x, line.y, line.angle):
+            # make an infinite line of angle *360-angle* that intersects *(line.x, line.y)*
+            # 1. make horizontal line from *(line.x, line.y)* of length *diagonal*
+            diagonal = math.sqrt(width**2 + height**2)
+            line1 = QLineF(line.x, line.y, line.x + diagonal, line.y)
+            # 2. set the angle
+            # defcon guidelines are clockwise
+            line1.setAngle(360 - line.angle)
+            # 3. reverse the line and set length to 2 * *diagonal*
+            line1.setPoints(line1.p2(), line1.p1())
+            line1.setLength(2 * diagonal)
         textX = 0
         textY = 0
         if drawLines:
-            if line.x is not None and line.y is not None and line.angle is not None:
-                # not infinity, but rect diagonal is close enough
-                diagonal = math.sqrt(rect[2]**2 + rect[3]**2)
-                angle = math.radians(line.angle)
-                x2 = math.cos(angle) * diagonal
-                y2 = math.sin(angle) * diagonal
-                drawLine(painter, line.x, line.y, x2, y2)
-
+            if line1 is not None:
+                drawLine(painter, line1.x1(), line1.y1(), line1.x2(), line1.y2())
+            else:
+                if line.y is not None:
+                    drawLine(painter, xMin, line.y, xMax, line.y)
+                elif line.x is not None:
+                    drawLine(painter, line.x, yMin, line.x, yMax)
+        if drawText and line.name:
+            if line1 is not None:
                 # find where the guideline and the glyph width/height intersect
-                line1 = QLineF(line.x, line.y, x2, y2)
                 line2 = QLineF(glyph.width + 6 * scale, yMin,
                                glyph.width + 6 * scale, yMax)
                 line3 = QLineF(xMin, yMax / 2, xMax, yMax / 2)
@@ -287,14 +298,11 @@ def drawFontGuidelines(painter, glyph, scale, rect, drawLines=True,
                 textY = point.y()
             else:
                 if line.y is not None:
-                    drawLine(painter, xMin, line.y, xMax, line.y)
                     textX = glyph.width + 6 * scale
                     textY = line.y - (fontSize / 3.5) * scale
                 elif line.x is not None:
-                    drawLine(painter, line.x, yMin, line.x, yMax)
                     textX = line.x + 6 * scale
                     textY = yMax / 2
-        if drawText and line.name:
             drawTextAtPoint(painter, line.name, textX, textY, scale)
         painter.restore()
 
