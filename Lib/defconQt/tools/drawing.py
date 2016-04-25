@@ -139,7 +139,7 @@ def drawTextAtPoint(painter, text, x, y, scale, xAlign="left", yAlign="bottom",
     lines = text.splitlines()
     lineSpacing = fM.lineSpacing()
     if xAlign != "left" or yAlign != "bottom":
-        width = scale * max(fM.width(line) for line in text)
+        width = scale * max(fM.width(line) for line in lines)
         height = scale * len(lines) * lineSpacing
         if xAlign == "center":
             x -= width / 2
