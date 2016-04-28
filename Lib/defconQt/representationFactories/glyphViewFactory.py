@@ -108,7 +108,7 @@ class OutlineInformationPen(AbstractPointPen):
                             p2 = point["point"]
                             if p1 != p2:
                                 data["bezierHandles"].append((p1, p2))
-                        elif forward["segmentType"] in ("curve", "line"):
+                        if forward["segmentType"] is not None:
                             p1 = forward["point"]
                             p2 = point["point"]
                             if p1 != p2:
