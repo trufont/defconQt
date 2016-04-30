@@ -23,12 +23,12 @@ headerFont = platformSpecific.otherUIFont()
 # TODO: show a symbol for content present on other layers
 
 
-def GlyphCellFactory(glyph, width, height, drawLayers=False, drawMarkColor=True, drawHeader=None, drawMetrics=None):
+def GlyphCellFactory(glyph, width, height, drawLayers=False, drawMarkColor=True, drawHeader=None, drawMetrics=None, pixelRatio=1.0):
     if drawHeader is None:
         drawHeader = height >= GlyphCellMinHeightForHeader
     if drawMetrics is None:
         drawMetrics = height >= GlyphCellMinHeightForMetrics
-    obj = GlyphCellFactoryDrawingController(glyph=glyph, font=glyph.font, width=width, height=height, drawLayers=False, drawMarkColor=drawMarkColor, drawHeader=drawHeader, drawMetrics=drawMetrics)
+    obj = GlyphCellFactoryDrawingController(glyph=glyph, font=glyph.font, width=width, height=height, drawLayers=False, drawMarkColor=drawMarkColor, drawHeader=drawHeader, drawMetrics=drawMetrics, pixelRatio=pixelRatio)
     return obj.getPixmap()
 
 
@@ -56,10 +56,11 @@ class GlyphCellFactoryDrawingController(object):
     the appearance of cells.
     """
 
-    def __init__(self, glyph, font, width, height,
+    def __init__(self, glyph, font, width, height, pixelRatio=1.0,
                  drawLayers=False, drawMarkColor=True, drawHeader=True, drawMetrics=False):
         self.glyph = glyph
         self.font = font
+        self.pixelRatio = pixelRatio
         self.width = width
         self.height = height
         self.bufferPercent = .15
@@ -79,7 +80,8 @@ class GlyphCellFactoryDrawingController(object):
         self.yOffset = abs(font.info.descender * self.scale) + self.buffer
 
     def getPixmap(self):
-        pixmap = QPixmap(self.width, self.height)
+        pixmap = QPixmap(self.width * self.pixelRatio, self.height * self.pixelRatio)
+        pixmap.setDevicePixelRatio(self.pixelRatio)
         pixmap.fill(Qt.transparent)
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.Antialiasing)
