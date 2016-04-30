@@ -86,6 +86,7 @@ class GlyphCellWidget(QWidget):
         args = self._cellRepresentationArguments
         args["width"] = self._cellWidth
         args["height"] = self._cellHeight
+        args["pixelRatio"] = self.devicePixelRatio()
         return glyph.getRepresentation(name, **args)
 
     def preloadGlyphCellImages(self):
@@ -274,8 +275,7 @@ class GlyphCellWidget(QWidget):
 
             if visibleRect.intersects(visibleRect.__class__(*rect)):
                 pixmap = self._getCurrentRepresentation(glyph)
-                painter.drawPixmap(
-                    left, t, pixmap, 0, 0, cellWidth, cellHeight)
+                painter.drawPixmap(left, t, pixmap)
 
                 if index in self._selection:
                     # TODO: draw focusRect on lastSelectedCell
