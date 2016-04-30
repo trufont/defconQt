@@ -299,8 +299,9 @@ class GlyphCellWidget(QWidget):
         emptyCells = columnCount * rowCount - len(self._glyphs)
         rem = columnCount - emptyCells
         painter.setPen(gridColor)
+        penHalf = painter.pen().widthF() * .5
         for i in range(1, self._rowCount+1):
-            top = (i * cellHeight) - .5
+            top = (i * cellHeight) - penHalf
             # don't paint on empty cells
             if i == self._rowCount:
                 w = paintWidth - cellWidth * emptyCells
@@ -308,7 +309,7 @@ class GlyphCellWidget(QWidget):
                 w = paintWidth
             painter.drawLine(0, top, w - 1, top)
         for i in range(1, self._columnCount+1):
-            left = (i * cellWidth) - .5
+            left = (i * cellWidth) - penHalf
             # don't paint on empty cells
             if i > rem:
                 h = paintHeight - cellHeight

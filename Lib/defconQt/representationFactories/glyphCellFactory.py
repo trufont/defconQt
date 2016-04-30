@@ -141,7 +141,7 @@ class GlyphCellFactoryDrawingController(object):
         for y in lines:
             if y is None:
                 continue
-            y = round((y * scale) + yMin + yOffset) - .5
+            y = round((y * scale) + yMin + yOffset)
             drawing.drawLine(painter, xMin, y, xMin + width, y)
 
     def drawCellVerticalMetrics(self, painter, rect):
@@ -194,7 +194,7 @@ class GlyphCellFactoryDrawingController(object):
         painter.fillRect(
             xMin + width - 2, yMin, 2, height, sidebearingsColor)
         # bottom line
-        y = yMin + height - .5
+        y = yMin + height - painter.pen().widthF() * .5
         painter.setPen(cellHeaderLineColor)
         drawing.drawLine(painter, xMin, y, xMin + width, y)
 
