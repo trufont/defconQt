@@ -129,7 +129,7 @@ class GlyphCellFactoryDrawingController(object):
                 markGradient = QLinearGradient(
                     0, 0, 0, self.height - GlyphCellHeaderHeight)
                 markGradient.setColorAt(1.0, color)
-                markGradient.setColorAt(0.0, color.lighter(125))
+                markGradient.setColorAt(0.0, color.lighter(115))
                 painter.fillRect(*(rect+(markGradient,)))
 
     def drawCellHorizontalMetrics(self, painter, rect):

@@ -192,7 +192,9 @@ class OneTwoListModel(AbstractListModel):
 
     def _columnCount(self):
         if self._is2D:
-            return len(self._list[0])
+            if self._list:
+                return len(self._list[0])
+            return 0
         else:
             return 1
 
@@ -210,7 +212,7 @@ class OneTwoListModel(AbstractListModel):
 
     def setList(self, lst):
         self._list = lst
-        if len(self._list) and isinstance(self._list[0], list):
+        if self._list and isinstance(self._list[0], list):
             self._is2D = True
         else:
             self._is2D = False
@@ -292,58 +294,32 @@ class ListView(QTreeView):
                 color = dialog.currentColor()
                 model.setData(index, color)
 
-
-    def selectionChanged(self, selected, deselected):
-        super(ListView, self).selectionChanged(selected, deselected)
-        self.selectionChanged_.emit()
-
-    def currentChanged(self, current, previous):
-        super(ListView, self).currentChanged(current, previous)
-        model = self.model()
-        self.currentItemChanged.emit(model.data(current))
-
-    def currentValue(self):
-        index = self.currentIndex()
-        model = self.model()
-        if model is None:
-            return None
-        return model.data(index)
-
-    def dropEvent(self, event):
-        if event.source() == self:
-            # widgets bookkeeping
-            cachedWidgets = []
-            # figure out the indexes
-            dragRow = self.currentIndex().row()
-            dropRow = self.indexAt(event.pos()).row()
-            if self.dropIndicatorPosition() == QAbstractItemView.BelowItem:
-                dropRow += 1
-            # extract
-            model = self.model()
-            for col in range(model.columnCount()):
-                widget = self.indexWidget(model.index(dragRow, 0))
-                if widget:
-                    # release the widget
-                    self.editorDestroyed(widget)
-                    # store it
-                    cachedWidgets.append((col, widget))
-            super(ListView, self).dropEvent(event)
-            for col, widget in cachedWidgets:
-                index = model.index(dropRow, col)
-                self.setIndexWidget(index, widget)
-        else:
-            super(ListView, self).dropEvent(event)
+    # -------------------
+    # Convenience methods
+    # -------------------
 
     def currentRow(self):
         index = self.currentIndex()
         data = self.model().list()
         return data[index.row()]
 
-
     def removeCurrentRow(self):
         index = self.currentIndex()
         model = self.model()
         model.removeRow(index.row())
+
+    def editItem(self, row, column):
+        model = self.model()
+        if model is None:
+            return
+        self.edit(model.index(row, column))
+
+    def setCurrentItem(self, row, column):
+        model = self.model()
+        if model is None:
+            return
+        index = model.index(row, column)
+        super(ListView, self).setCurrentIndex(index)
 
     def selectedRows(self):
         selectionModel = self.selectionModel()
@@ -351,13 +327,6 @@ class ListView(QTreeView):
             return []
         selectedRows = selectionModel.selectedRows()
         return [index.row() for index in selectedRows]
-
-    def setCurrentIndex(self, row, column):
-        model = self.model()
-        if model is None:
-            return
-        index = model.index(row, column)
-        super(ListView, self).setCurrentIndex(index)
 
     def setEditable(self, value):
         """
@@ -422,6 +391,9 @@ class ListView(QTreeView):
             self.valueChanged = model.valueChanged
             self.setModel(model)
         else:
+            # reset the selection model to avoid selected row out of range
+            # http://stackoverflow.com/a/15878679/2037879
+            self.selectionModel().reset()
             model.setList(lst)
 
     def flatListInput(self):
@@ -453,3 +425,41 @@ class ListView(QTreeView):
 
         """
         self._flatListInput = value
+
+    # ----------
+    # Qt methods
+    # ----------
+
+    def currentChanged(self, current, previous):
+        super(ListView, self).currentChanged(current, previous)
+        model = self.model()
+        self.currentItemChanged.emit(model.data(current))
+
+    def selectionChanged(self, selected, deselected):
+        super(ListView, self).selectionChanged(selected, deselected)
+        self.selectionChanged_.emit()
+
+    def dropEvent(self, event):
+        if event.source() == self:
+            # widgets bookkeeping
+            cachedWidgets = []
+            # figure out the indexes
+            dragRow = self.currentIndex().row()
+            dropRow = self.indexAt(event.pos()).row()
+            if self.dropIndicatorPosition() == QAbstractItemView.BelowItem:
+                dropRow += 1
+            # extract
+            model = self.model()
+            for col in range(model.columnCount()):
+                widget = self.indexWidget(model.index(dragRow, 0))
+                if widget:
+                    # release the widget
+                    self.editorDestroyed(widget)
+                    # store it
+                    cachedWidgets.append((col, widget))
+            super(ListView, self).dropEvent(event)
+            for col, widget in cachedWidgets:
+                index = model.index(dropRow, col)
+                self.setIndexWidget(index, widget)
+        else:
+            super(ListView, self).dropEvent(event)
