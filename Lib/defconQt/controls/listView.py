@@ -14,6 +14,7 @@ from PyQt5.QtCore import pyqtSignal, QAbstractTableModel, QModelIndex, Qt
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (
     QAbstractItemView, QColorDialog, QStyledItemDelegate, QTreeView)
+import collections
 
 __all__ = ["ListView"]
 
@@ -212,7 +213,7 @@ class OneTwoListModel(AbstractListModel):
 
     def setList(self, lst):
         self._list = lst
-        if self._list and isinstance(self._list[0], list):
+        if self._list and isinstance(self._list[0], collections.MutableSequence):
             self._is2D = True
         else:
             self._is2D = False
