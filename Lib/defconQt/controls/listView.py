@@ -262,6 +262,7 @@ class ListView(QTreeView):
         self._triggers = None
 
     def selectionChanged(self, selected, deselected):
+        super(ListView, self).selectionChanged(selected, deselected)
         self.selectionChanged_.emit()
 
     def currentChanged(self, current, previous):
