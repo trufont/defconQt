@@ -11,7 +11,9 @@ lists_.
 from __future__ import absolute_import
 from defcon import Font, Glyph
 from PyQt5.QtCore import pyqtSignal, QAbstractTableModel, QModelIndex, Qt
-from PyQt5.QtWidgets import QAbstractItemView, QStyledItemDelegate, QTreeView
+from PyQt5.QtGui import QColor
+from PyQt5.QtWidgets import (
+    QAbstractItemView, QColorDialog, QStyledItemDelegate, QTreeView)
 
 __all__ = ["ListView"]
 
@@ -217,14 +219,29 @@ class OneTwoListModel(AbstractListModel):
 
 class ListItemDelegate(QStyledItemDelegate):
 
+    def createEditor(self, parent, option, index):
+        data = index.data(Qt.DisplayRole)
+        if isinstance(data, QColor):
+            # we have our own ways
+            return None
+        return super(ListItemDelegate, self).createEditor(parent, option, index)
+
     def displayText(self, value, locale):
         if isinstance(value, Font):
             info = value.info
             return "%s %s" % (info.familyName, info.styleName)
         elif isinstance(value, Glyph):
             return value.name
-        else:
-            return super(ListItemDelegate, self).displayText(value, locale)
+        elif isinstance(value, QColor):
+            # we'll paint the color instead
+            return None
+        return super(ListItemDelegate, self).displayText(value, locale)
+
+    def paint(self, painter, option, index):
+        super().paint(painter, option, index)
+        data = index.data(Qt.DisplayRole)
+        if isinstance(data, QColor):
+            painter.fillRect(option.rect.adjusted(2, 2, -2, -2), data)
 
 
 class ListView(QTreeView):
@@ -258,8 +275,23 @@ class ListView(QTreeView):
         self.setItemDelegate(ListItemDelegate())
         self.setRootIsDecorated(False)
         self.header().setVisible(False)
+        self.doubleClicked.connect(self._doubleClicked)
         self._flatListInput = False
         self._triggers = None
+
+    def _doubleClicked(self, index):
+        model = self.model()
+        if model is None:
+            return
+        data = model.data(index)
+        if isinstance(data, QColor):
+            dialog = QColorDialog(self)
+            dialog.setCurrentColor(data)
+            ret = dialog.exec_()
+            if ret:
+                color = dialog.currentColor()
+                model.setData(index, color)
+
 
     def selectionChanged(self, selected, deselected):
         super(ListView, self).selectionChanged(selected, deselected)
@@ -405,7 +437,7 @@ class ListView(QTreeView):
         In that case, pass the *columnCount* argument to specify how many
         columns should be considered, e.g.:
 
-        >>> from defconQt.control.listView import ListView
+        >>> from defconQt.controls.listView import ListView
         >>> view = ListView()
         >>> view.setList(
         ...     [
