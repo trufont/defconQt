@@ -615,6 +615,9 @@ class GlyphView(QScrollArea):
     def _subscribeToGlyph(self, glyph):
         if glyph is not None:
             glyph.addObserver(self, "_glyphChanged", "Glyph.Changed")
+            layerSet = glyph.layerSet
+            if layerSet is not None:
+                layerSet.addObserver(self, "_glyphChanged", "LayerSet.LayerChanged")
             font = glyph.font
             if font is not None:
                 font.info.addObserver(self, "_fontChanged", "Info.Changed")
@@ -624,6 +627,9 @@ class GlyphView(QScrollArea):
             glyph = self._glyphWidget.glyph()
             if glyph is not None:
                 glyph.removeObserver(self, "Glyph.Changed")
+                layerSet = glyph.layerSet
+                if layerSet is not None:
+                    layerSet.removeObserver(self, "LayerSet.LayerChanged")
                 font = glyph.font
                 if font is not None:
                     font.info.removeObserver(self, "Info.Changed")
