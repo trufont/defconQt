@@ -13,7 +13,8 @@ from defcon import Font, Glyph
 from PyQt5.QtCore import pyqtSignal, QAbstractTableModel, QModelIndex, Qt
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (
-    QAbstractItemView, QColorDialog, QStyledItemDelegate, QTreeView)
+    QAbstractItemView, QColorDialog, QProxyStyle, QStyle, QStyleOption,
+    QStyledItemDelegate, QTreeView)
 import collections
 
 __all__ = ["ListView"]
@@ -254,6 +255,20 @@ class ListItemDelegate(QStyledItemDelegate):
             painter.fillRect(option.rect.adjusted(2, 2, -2, -2), data)
 
 
+class ListProxy(QProxyStyle):
+
+    def drawPrimitive(self, element, option, painter, widget):
+        # http://stackoverflow.com/a/9611137/2037879
+        if element == QStyle.PE_IndicatorItemViewItemDrop and not option.rect.isNull():
+            option_ = QStyleOption(option)
+            option_.rect.setLeft(0)
+            if widget is not None:
+                option_.rect.setRight(widget.width())
+            super(ListProxy, self).drawPrimitive(element, option_, painter, widget)
+        else:
+            super(ListProxy, self).drawPrimitive(element, option, painter, widget)
+
+
 class ListView(QTreeView):
     """
     A QTreeView_ widget that displays a Python list, whether 1D or 2D.
@@ -284,6 +299,7 @@ class ListView(QTreeView):
         super(ListView, self).__init__(parent)
         self.setItemDelegate(ListItemDelegate())
         self.setRootIsDecorated(False)
+        self.setStyle(ListProxy())
         self.header().setVisible(False)
         self.doubleClicked.connect(self._doubleClicked)
         self._flatListInput = False
@@ -400,10 +416,13 @@ class ListView(QTreeView):
             self.valueChanged = model.valueChanged
             self.setModel(model)
         else:
+            index = self.currentIndex()
             # reset the selection model to avoid selected row out of range
             # http://stackoverflow.com/a/15878679/2037879
             self.selectionModel().reset()
             model.setList(lst)
+            if index.row() < model.rowCount() and index.column() < model.columnCount():
+                self.setCurrentIndex(index)
 
     def flatListInput(self):
         """
