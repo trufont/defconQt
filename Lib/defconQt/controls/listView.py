@@ -260,6 +260,10 @@ class ListProxy(QProxyStyle):
     def drawPrimitive(self, element, option, painter, widget):
         # http://stackoverflow.com/a/9611137/2037879
         if element == QStyle.PE_IndicatorItemViewItemDrop and not option.rect.isNull():
+            # we don't drag over items
+            # XXX: possible to forbid this in the model instead?
+            if option.rect.height():
+                return
             option_ = QStyleOption(option)
             option_.rect.setLeft(0)
             if widget is not None:
@@ -275,7 +279,7 @@ class ListView(QTreeView):
 
     Besides standard types, this widget can display Font_ or Glyph_.
 
-    Use *setAcceptDrops(True)* to allow reordering drag and drop.
+    Use *setDragEnabled(True)* to allow reordering drag and drop.
 
     Emits *listChanged* when data changes inside the widget (when performing
     drag and drop, mostly).
@@ -297,6 +301,8 @@ class ListView(QTreeView):
 
     def __init__(self, parent=None):
         super(ListView, self).__init__(parent)
+        self.setDragDropMode(QAbstractItemView.InternalMove)
+        self.setDragEnabled(False)
         self.setItemDelegate(ListItemDelegate())
         self.setRootIsDecorated(False)
         self.setStyle(ListProxy())
