@@ -25,6 +25,7 @@ class AbstractListModel(QAbstractTableModel):
     def __init__(self, lst, parent=None):
         super(AbstractListModel, self).__init__(parent)
         self._headerLabels = []
+        self._inDrop = False
 
         self.setList(lst)
 
@@ -54,6 +55,7 @@ class AbstractListModel(QAbstractTableModel):
         return list(self._list)
 
     def setList(self, lst):
+        self.layoutAboutToBeChanged.emit()
         self._list = lst
         self.layoutChanged.emit()
 
@@ -84,7 +86,8 @@ class AbstractListModel(QAbstractTableModel):
             row, column = index.row(), index.column()
             oldValue = self._data(row, column)
             self._setData(row, column, value)
-            self.valueChanged.emit(index, oldValue, value)
+            if not self._inDrop:
+                self.valueChanged.emit(index, oldValue, value)
             self.dataChanged.emit(index, index, [role])
             return True
         return super(AbstractListModel, self).setData(index, value, role)
@@ -122,7 +125,10 @@ class AbstractListModel(QAbstractTableModel):
             return False
         # force column 0, we want to drag column onto the start of the
         # drop spot, otherwise it will be split between two new columns
-        return super(AbstractListModel, self).dropMimeData(data, action, row, 0, parent)
+        self._inDrop = True
+        result = super(AbstractListModel, self).dropMimeData(data, action, row, 0, parent)
+        self._inDrop = False
+        return result
 
     def flags(self, index):
         flags = Qt.ItemIsEnabled | Qt.ItemIsSelectable \
@@ -212,6 +218,7 @@ class OneTwoListModel(AbstractListModel):
             del self._list[index]
 
     def setList(self, lst):
+        self.layoutAboutToBeChanged.emit()
         self._list = lst
         if self._list and isinstance(self._list[0], collections.MutableSequence):
             self._is2D = True
@@ -389,6 +396,7 @@ class ListView(QTreeView):
             else:
                 modelClass = self.oneTwoListModelClass
             model = modelClass(lst, **kwargs)
+            self.dataDropped = model.rowsRemoved
             self.valueChanged = model.valueChanged
             self.setModel(model)
         else:
