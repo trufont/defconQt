@@ -108,6 +108,9 @@ class OutlineInformationPen(AbstractPointPen):
                             p2 = point["point"]
                             if p1 != p2:
                                 data["bezierHandles"].append((p1, p2))
+                            # only allow two handles a point for qcurve
+                            if forward["segmentType"] != "qcurve":
+                                continue
                         if forward["segmentType"] is not None:
                             p1 = forward["point"]
                             p2 = point["point"]
