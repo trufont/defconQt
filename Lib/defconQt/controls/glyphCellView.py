@@ -581,8 +581,9 @@ class GlyphCellWidget(QWidget):
             newSelection = matchIndex
         elif lastResortIndex is not None:
             newSelection = lastResortIndex
-        if newSelection is not None:
-            self.setSelection({newSelection})
+        else:
+            return
+        self.setSelection({newSelection})
 
     def _isUnicodeChar(self, char):
         return len(char) and unicodedata.category(char) != "Cc"
