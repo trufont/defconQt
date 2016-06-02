@@ -482,10 +482,6 @@ class GlyphCellWidget(QWidget):
             index = self._lastSelectedCell
             if index is not None:
                 self.glyphActivated.emit(self._glyphs[index])
-        elif event.matches(QKeySequence.SelectAll):
-            self.selectAll()
-        elif key == Qt.Key_D and modifiers & Qt.ControlModifier:
-            self.setSelection(set())
         elif modifiers in (Qt.NoModifier, Qt.ShiftModifier):
             self._glyphNameInputEvent(event)
         else:
