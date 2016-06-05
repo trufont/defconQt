@@ -461,7 +461,7 @@ def drawGlyphFillAndStroke(
 def drawGlyphPoints(
         painter, glyph, scale, rect,
         drawStartPoints=True, drawOnCurves=True, drawOffCurves=True,
-        drawCoordinates=True, onCurveColor=None,
+        drawCoordinates=False, onCurveColor=None,
         otherColor=None, backgroundColor=None):
     """
     Draws a Glyph_ *glyph*’s points.
