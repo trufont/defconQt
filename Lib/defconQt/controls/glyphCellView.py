@@ -287,7 +287,8 @@ class GlyphCellWidget(QWidget):
                     # TODO: alpha values somewhat arbitrary (here and in
                     # glyphLineView)
                     selectionColor.setAlphaF(.2 if active else .6)
-                    pW = 1 + painter.pen().widthF() * .5
+                    pixelRatio = self.devicePixelRatio()
+                    pW = 1 + (pixelRatio - 1) / pixelRatio
                     painter.fillRect(QRectF(
                         left + 1, t + 1, cellWidth - pW, cellHeight - pW),
                         selectionColor)

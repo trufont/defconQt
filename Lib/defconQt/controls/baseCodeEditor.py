@@ -7,7 +7,7 @@ The *baseCodeEditor* submodule provides language-agnostic code editor parts,
 including a search widget, goto dialog and code highlighter.
 """
 from __future__ import division, absolute_import
-from defconQt.tools import platformSpecific
+from defconQt.tools import drawing, platformSpecific
 from PyQt5.QtCore import pyqtSignal, QRegularExpression, QSize, Qt
 from PyQt5.QtGui import (
     QColor, QIntValidator, QPainter, QSyntaxHighlighter, QTextCursor)
@@ -300,11 +300,22 @@ class BaseCodeEditor(QPlainTextEdit):
 
     def lineNumberAreaPaintEvent(self, event):
         painter = QPainter(self.lineNumbers)
-        painter.fillRect(event.rect(), QColor(230, 230, 230))
-        d = event.rect().topRight()
-        a = event.rect().bottomRight()
+        rect = event.rect()
+        painter.fillRect(rect, QColor(230, 230, 230))
+        d = rect.topRight()
+        a = rect.bottomRight()
         painter.setPen(Qt.darkGray)
-        painter.drawLine(d.x(), d.y(), a.x(), a.y())
+        # Alright. Since we just did setPen() w the default color constructor
+        # it set the pen to a cosmetic width (of zero), i.e. drawing one pixel
+        # regardless of screen density.
+        # The thing is, we want to paint the last pixels at width boundary.
+        # So if devicePixelRatio is e.g. 3 (3 device pixels per screen pixel),
+        # then we need to translate by 3-1 pixels, but since 3 device pixels
+        # is just one pixel is painter units, we'd have to divide by device
+        # pixels after, so we would translate by 2/3 "software" pixels.
+        pixelRatio = self.lineNumbers.devicePixelRatio()
+        delta = (pixelRatio - 1) / pixelRatio
+        drawing.drawLine(painter, d.x() + delta, d.y(), a.x() + delta, a.y())
         painter.setPen(QColor(100, 100, 100))
         painter.setFont(self.font())
 
