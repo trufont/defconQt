@@ -10,8 +10,9 @@ in cells with their names drawn inside headers.
 """
 from __future__ import division, absolute_import
 from defcon import Glyph
+from defconQt.tools import drawing
 from defconQt.tools.glyphsMimeData import GlyphsMimeData
-from PyQt5.QtCore import pyqtSignal, QSize, Qt
+from PyQt5.QtCore import pyqtSignal, QRectF, QSize, Qt
 from PyQt5.QtGui import (
     QColor, QCursor, QDrag, QKeySequence, QPainter, QPainterPath, QPalette)
 from PyQt5.QtWidgets import QApplication, QScrollArea, QSizePolicy, QWidget
@@ -286,8 +287,9 @@ class GlyphCellWidget(QWidget):
                     # TODO: alpha values somewhat arbitrary (here and in
                     # glyphLineView)
                     selectionColor.setAlphaF(.2 if active else .6)
-                    painter.fillRect(
-                        left + 1, t + 1, cellWidth - 3, cellHeight - 3,
+                    pW = 1 + painter.pen().widthF() * .5
+                    painter.fillRect(QRectF(
+                        left + 1, t + 1, cellWidth - pW, cellHeight - pW),
                         selectionColor)
 
             left += cellWidth
@@ -299,23 +301,22 @@ class GlyphCellWidget(QWidget):
         emptyCells = columnCount * rowCount - len(self._glyphs)
         rem = columnCount - emptyCells
         painter.setPen(gridColor)
-        penHalf = painter.pen().widthF() * .5
         for i in range(1, self._rowCount+1):
-            top = (i * cellHeight) - penHalf
+            top = i * cellHeight
             # don't paint on empty cells
             if i == self._rowCount:
                 w = paintWidth - cellWidth * emptyCells
             else:
                 w = paintWidth
-            painter.drawLine(0, top, w - 1, top)
+            drawing.drawLine(painter, 0, top, w, top)
         for i in range(1, self._columnCount+1):
-            left = (i * cellWidth) - penHalf
+            left = i * cellWidth
             # don't paint on empty cells
             if i > rem:
                 h = paintHeight - cellHeight
             else:
                 h = paintHeight
-            painter.drawLine(left, 0, left, h - 1)
+            drawing.drawLine(painter, left, 0, left, h)
 
         # drop insertion position
         dropIndex = self._currentDropIndex

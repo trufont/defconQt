@@ -2,7 +2,7 @@
 from __future__ import division, absolute_import
 from defconQt.tools import drawing, platformSpecific
 from defconQt.tools.drawing import colorToQColor
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import QRectF, Qt
 from PyQt5.QtGui import (
     QColor, QFontMetrics, QLinearGradient, QPainter, QPixmap)
 
@@ -192,11 +192,11 @@ class GlyphCellFactoryDrawingController(object):
             sidebearingsColor = sidebearingsColor.darker(110)
         painter.fillRect(xMin, yMin, width, height, baseColor)
         # sidebearings
-        painter.fillRect(xMin, yMin, 1, height, sidebearingsColor)
+        painter.fillRect(QRectF(xMin, yMin, 1, height), sidebearingsColor)
         painter.fillRect(
-            xMin + width - 2, yMin, 2, height, sidebearingsColor)
+            QRectF(xMin + width + .5, yMin, -1, height), sidebearingsColor)
         # bottom line
-        y = yMin + height - painter.pen().widthF() * .5
+        y = yMin + height
         painter.setPen(cellHeaderLineColor)
         drawing.drawLine(painter, xMin, y, xMin + width, y)
 
