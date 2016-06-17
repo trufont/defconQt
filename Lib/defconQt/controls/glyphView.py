@@ -10,9 +10,9 @@ various display parameters.
 """
 from __future__ import division, absolute_import
 from defconQt.tools import drawing, platformSpecific
-from PyQt5.QtCore import pyqtSignal, QPoint, QPointF, QSize, Qt
+from PyQt5.QtCore import pyqtSignal, QEvent, QPoint, QPointF, QSize, Qt
 from PyQt5.QtGui import QCursor, QPainter
-from PyQt5.QtWidgets import QScrollArea, QSizePolicy, QWidget
+from PyQt5.QtWidgets import QPinchGesture, QScrollArea, QSizePolicy, QWidget
 
 # TODO: when the scrollArea resizes, keep the view centered
 
@@ -601,6 +601,7 @@ class GlyphView(QScrollArea):
 
     def __init__(self, parent=None):
         super(GlyphView, self).__init__(parent)
+        self.grabGesture(Qt.PinchGesture)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.setWidgetResizable(True)
@@ -733,3 +734,25 @@ class GlyphView(QScrollArea):
 
     def setBackgroundColor(self, color):
         self._glyphWidget.setBackgroundColor(color)
+
+    # ----------
+    # Qt methods
+    # ----------
+
+    def event(self, event):
+        if event.type() == QEvent.Gesture:
+            return self.gestureEvent(event)
+        return super().event(event)
+
+    def gestureEvent(self, event):
+        gesture = event.gesture(Qt.PinchGesture)
+        if gesture:
+            self.pinchTriggered(gesture)
+            return True
+        return False
+
+    def pinchTriggered(self, gesture):
+        changeFlags = gesture.changeFlags()
+        if changeFlags & QPinchGesture.ScaleFactorChanged:
+            self.zoom(
+                gesture.scaleFactor() - gesture.lastScaleFactor(), "cursor")
