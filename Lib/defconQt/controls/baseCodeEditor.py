@@ -418,7 +418,8 @@ class BaseCodeEditor(QPlainTextEdit):
                 cursor.movePosition(QTextCursor.NextCharacter,
                                     QTextCursor.KeepAnchor,
                                     len(self._indent))
-                cursor.removeSelectedText()
+                if cursor.selectedText() == self._indent:
+                    cursor.removeSelectedText()
             cursor.movePosition(QTextCursor.NextBlock)
         cursor.endEditBlock()
 
@@ -436,10 +437,9 @@ class BaseCodeEditor(QPlainTextEdit):
             newLineSpace = "".join(self._indent for _ in range(indentLvl))
             cursor = self.textCursor()
             cursor.insertText(newLineSpace)
-        elif key == Qt.Key_Backspace or (
-                key == Qt.Key_Tab and event.modifiers() & Qt.ShiftModifier):
+        elif key in (Qt.Key_Backspace, Qt.Key_Backtab):
             cursor = self.textCursor()
-            if key == Qt.Key_Tab and cursor.hasSelection():
+            if key == Qt.Key_Backtab and cursor.hasSelection():
                 self.performLinewiseIndent(cursor, False)
             else:
                 cursor.movePosition(QTextCursor.PreviousCharacter,
