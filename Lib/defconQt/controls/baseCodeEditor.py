@@ -299,7 +299,8 @@ class BaseCodeEditor(QPlainTextEdit):
     # ------------
 
     def lineNumberAreaPaintEvent(self, event):
-        painter = QPainter(self.lineNumbers)
+        painter = QPainter()
+        painter.begin(self.lineNumbers)
         rect = event.rect()
         painter.fillRect(rect, QColor(230, 230, 230))
         d = rect.topRight()
@@ -336,6 +337,7 @@ class BaseCodeEditor(QPlainTextEdit):
             top = bottom
             bottom = top + int(self.blockBoundingRect(block).height())
             blockNumber += 1
+        painter.end()
 
     def lineNumberAreaWidth(self):
         if not self._lineNumbersVisible:
@@ -395,6 +397,31 @@ class BaseCodeEditor(QPlainTextEdit):
         cursor.movePosition(QTextCursor.EndOfLine)
         return indent
 
+    def performLinewiseIndent(self, cursor, positive=True):
+        # do a lisewise indent
+        p = cursor.position()
+        a = cursor.anchor()
+        if a > p:
+            a, p = p, a
+
+        cursor.setPosition(p)
+        pBlock = cursor.blockNumber()
+        cursor.setPosition(a)
+        aBlock = cursor.blockNumber()
+
+        cursor.beginEditBlock()
+        for _ in range(pBlock - aBlock + 1):
+            cursor.movePosition(QTextCursor.StartOfBlock)
+            if positive:
+                cursor.insertText(self._indent)
+            else:
+                cursor.movePosition(QTextCursor.NextCharacter,
+                                    QTextCursor.KeepAnchor,
+                                    len(self._indent))
+                cursor.removeSelectedText()
+            cursor.movePosition(QTextCursor.NextBlock)
+        cursor.endEditBlock()
+
     def keyPressEvent(self, event):
         key = event.key()
         if key == Qt.Key_Return:
@@ -410,18 +437,24 @@ class BaseCodeEditor(QPlainTextEdit):
             cursor = self.textCursor()
             cursor.insertText(newLineSpace)
         elif key == Qt.Key_Backspace or (
-                key == Qt.Key_Tab and event.modifiers() & Qt.AltModifier):
+                key == Qt.Key_Tab and event.modifiers() & Qt.ShiftModifier):
             cursor = self.textCursor()
-            cursor.movePosition(QTextCursor.PreviousCharacter,
-                                QTextCursor.KeepAnchor,
-                                len(self._indent))
-            if cursor.selectedText() == self._indent:
-                cursor.removeSelectedText()
+            if key == Qt.Key_Tab and cursor.hasSelection():
+                self.performLinewiseIndent(cursor, False)
             else:
-                super(BaseCodeEditor, self).keyPressEvent(event)
+                cursor.movePosition(QTextCursor.PreviousCharacter,
+                                    QTextCursor.KeepAnchor,
+                                    len(self._indent))
+                if cursor.selectedText() == self._indent:
+                    cursor.removeSelectedText()
+                else:
+                    super(BaseCodeEditor, self).keyPressEvent(event)
         elif key == Qt.Key_Tab:
             cursor = self.textCursor()
-            cursor.insertText(self._indent)
+            if cursor.hasSelection():
+                self.performLinewiseIndent(cursor)
+            else:
+                cursor.insertText(self._indent)
         else:
             super(BaseCodeEditor, self).keyPressEvent(event)
 
