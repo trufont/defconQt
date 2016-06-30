@@ -560,7 +560,7 @@ class GlyphLineWidget(QWidget):
             self._pointSize > 150
         drawing.drawFontVerticalMetrics(
             painter, glyph, self._inverseScale, rect, drawText=drawText,
-            backgroundColor=self._backgroundColor, flipped=True)
+            backgroundColor=self._backgroundColor)
 
     def drawMargins(self, painter, glyph, layerName, rect):
         drawing.drawGlyphMargins(
@@ -579,7 +579,7 @@ class GlyphLineWidget(QWidget):
             componentFillColor=fillColor)
 
     def drawPoints(self, painter, glyph, layerName, rect):
-        drawStartPoint = self.drawingAttribute(
+        drawStartPoints = self.drawingAttribute(
             "showGlyphStartPoints", layerName) and self._pointSize > 175
         drawOnCurves = self.drawingAttribute(
             "showGlyphOnCurvePoints", layerName) and self._pointSize > 175
@@ -589,15 +589,15 @@ class GlyphLineWidget(QWidget):
             "showGlyphPointCoordinates", layerName) and self._pointSize > 250
         drawing.drawGlyphPoints(
             painter, glyph, self._inverseScale, rect,
-            drawStartPoint=drawStartPoint, drawOnCurves=drawOnCurves,
+            drawStartPoints=drawStartPoints, drawOnCurves=drawOnCurves,
             drawOffCurves=drawOffCurves, drawCoordinates=drawCoordinates,
-            backgroundColor=self._backgroundColor, flipped=True)
+            backgroundColor=self._backgroundColor)
 
     def drawAnchors(self, painter, glyph, layerName, rect):
         drawText = self._pointSize > 50
         drawing.drawGlyphAnchors(
             painter, glyph, self._inverseScale, rect, drawText=drawText,
-            backgroundColor=self._backgroundColor, flipped=True)
+            backgroundColor=self._backgroundColor)
 
     def drawGlyphForeground(self, painter, glyph, rect, selected=False):
         pass
