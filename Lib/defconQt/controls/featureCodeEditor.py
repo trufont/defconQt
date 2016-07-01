@@ -141,10 +141,12 @@ class FeatureCodeEditor(BaseCodeEditor):
         if event.source() != self:
             mimeData = event.mimeData()
             if mimeData.hasUrls():
-                paths = mimeData.urls()
-                for path in paths:
-                    localPath = path.toLocalFile()
-                    if os.path.splitext(localPath)[1] == ".fea":
+                urls = mimeData.urls()
+                for url in urls:
+                    if not url.isLocalFile():
+                        continue
+                    path = url.toLocalFile()
+                    if os.path.splitext(path)[1] == ".fea":
                         event.acceptProposedAction()
                         break
                 return
@@ -154,12 +156,14 @@ class FeatureCodeEditor(BaseCodeEditor):
         if event.source() != self:
             mimeData = event.mimeData()
             if mimeData.hasUrls():
-                paths = mimeData.urls()
+                urls = mimeData.urls()
                 feaPaths = []
-                for path in paths:
-                    localPath = path.toLocalFile()
-                    if os.path.splitext(localPath)[1] == ".fea":
-                        feaPaths.append(localPath)
+                for url in urls:
+                    if not url.isLocalFile():
+                        continue
+                    path = url.toLocalFile()
+                    if os.path.splitext(path)[1] == ".fea":
+                        feaPaths.append(path)
                 textCursor = self.cursorForPosition(event.pos())
                 textCursor.insertText("\n".join(
                     "include(%s);" % feaPath for feaPath in feaPaths))
