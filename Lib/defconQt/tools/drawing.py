@@ -468,13 +468,12 @@ def drawGlyphPoints(
 
     .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
     """
-    layer = glyph.layer
-    onCurveColor = None
-    if layer is not None:
-        if layer.color is not None:
-            onCurveColor = colorToQColor(layer.color)
     if onCurveColor is None:
-        onCurveColor = defaultColor("glyphOnCurvePoints")
+        layer = glyph.layer
+        if layer is not None and layer.color is not None:
+            onCurveColor = colorToQColor(layer.color)
+        else:
+            onCurveColor = defaultColor("glyphOnCurvePoints")
     if otherColor is None:
         otherColor = defaultColor("glyphOtherPoints")
     if backgroundColor is None:

@@ -78,6 +78,12 @@ class OnlyComponentsQtPen(BasePen):
 # ----------
 
 
+def OutlineInformationFactory(glyph):
+    pen = OutlineInformationPen()
+    glyph.drawPoints(pen)
+    return pen.getData()
+
+
 class OutlineInformationPen(AbstractPointPen):
 
     def __init__(self):
@@ -155,12 +161,6 @@ class OutlineInformationPen(AbstractPointPen):
 
     def addComponent(self, baseGlyphName, transformation):
         self._rawComponentData.append((baseGlyphName, transformation))
-
-
-def OutlineInformationFactory(glyph):
-    pen = OutlineInformationPen()
-    glyph.drawPoints(pen)
-    return pen.getData()
 
 # -----
 # image
