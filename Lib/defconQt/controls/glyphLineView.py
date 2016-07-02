@@ -409,7 +409,10 @@ class GlyphLineWidget(QWidget):
 
     def sizeHint(self):
         width = height = self._buffer * 2
-        if not self._wrapLines:
+        if not self._glyphRecords:
+            width += 600
+            height += 200
+        elif not self._wrapLines:
             for glyphRecord in self._glyphRecords:
                 width += (glyphRecord.advanceWidth + glyphRecord.xPlacement +
                           glyphRecord.xAdvance) * self._scale
