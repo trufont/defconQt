@@ -411,9 +411,12 @@ def drawGlyphMargins(painter, glyph, scale, rect, drawFill=True,
 def drawGlyphFillAndStroke(
         painter, glyph, scale, rect, drawFill=True, drawStroke=True,
         contourFillColor=None, contourStrokeColor=None,
-        componentFillColor=None, contourStrokeWidth=1.0):
+        componentFillColor=None, componentStrokeColor=None, strokeWidth=1.0):
     """
     Draws a Glyph_ *glyph* contours’ fill and stroke.
+
+    Component fill is always drawn, component stroke is drawn if
+    *componentStrokeColor* is not None.
 
     .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
     """
@@ -450,9 +453,15 @@ def drawGlyphFillAndStroke(
             contourStrokeColor = defaultColor("glyphContourStroke")
         # contours
         pen = QPen(contourStrokeColor)
-        pen.setWidthF(contourStrokeWidth * scale)
+        pen.setWidthF(strokeWidth * scale)
         painter.setPen(pen)
         painter.drawPath(contourPath)
+    # components
+    if componentStrokeColor is not None:
+        pen = QPen(componentStrokeColor)
+        pen.setWidthF(strokeWidth * scale)
+        painter.setPen(pen)
+        painter.drawPath(componentPath)
     painter.restore()
 
 # points
