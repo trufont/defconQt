@@ -10,7 +10,7 @@ in cells with their names drawn inside headers.
 """
 from __future__ import division, absolute_import
 from defcon import Glyph
-from defconQt.tools import drawing
+from defconQt.tools import drawing, platformSpecific
 from defconQt.tools.glyphsMimeData import GlyphsMimeData
 from PyQt5.QtCore import pyqtSignal, QRectF, QSize, Qt
 from PyQt5.QtGui import (
@@ -283,10 +283,12 @@ class GlyphCellWidget(QWidget):
                     # TODO: inactive color looks odd
                     palette = self.palette()
                     active = palette.currentColorGroup() != QPalette.Inactive
+                    opacityMultiplier = platformSpecific.colorOpacityMultiplier()
                     selectionColor = palette.color(QPalette.Highlight)
                     # TODO: alpha values somewhat arbitrary (here and in
                     # glyphLineView)
-                    selectionColor.setAlphaF(.2 if active else .6)
+                    selectionColor.setAlphaF(
+                        .2 * opacityMultiplier if active else .6)
                     pixelRatio = self.devicePixelRatio()
                     pW = 1 + (pixelRatio - 1) / pixelRatio
                     painter.fillRect(QRectF(

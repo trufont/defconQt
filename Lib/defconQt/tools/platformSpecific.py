@@ -18,6 +18,19 @@ from __future__ import absolute_import
 from PyQt5.QtGui import QFont, QFontDatabase
 import sys
 
+# ------
+# Colors
+# ------
+
+def colorOpacityMultiplier():
+    """
+    Returns a transparency multiplier to have consistent system colors on all
+    platforms. Assumes Windows = 1.
+    """
+    if sys.platform == "darwin":
+        return 1.4
+    return 1
+
 # -----
 # Fonts
 # -----
@@ -45,12 +58,26 @@ def otherUIFont():
     """
     Returns an auxiliary UI font.
     """
-    font = QFont('Lucida Sans Unicode')
-    font.insertSubstitution('Lucida Sans Unicode', 'Lucida Grande')
-    font.insertSubstitution('Lucida Sans Unicode', 'Luxi Sans')
-    if sys.platform == "darwin":
+    font = QFont()
+    pointSize = 8
+    if sys.platform == "win32":
+        font_ = QFont("Segoe UI")
+        if font_.exactMatch():
+            font = font_
+            pointSize = 9
+        else:
+            font = QFont("Lucida Sans Unicode")
+    elif sys.platform == "darwin":
+        try:
+            platform
+        except NameError:
+            import platform
+        if platform.mac_ver()[0].startswith("10.10"):
+            font = QFont("Lucida Grande")
         pointSize = 11
-    else:
-        pointSize = 8
+    elif sys.platform.startswith("linux"):
+        font_ = QFont("Luxi Sans")
+        if font_.exactMatch():
+            font = font_
     font.setPointSize(pointSize)
     return font
