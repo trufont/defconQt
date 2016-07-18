@@ -80,8 +80,6 @@ def otherUIFont():
             font = QFont("Lucida Grande")
         pointSize = 11
     elif sys.platform.startswith("linux"):
-        font_ = QFont("Luxi Sans")
-        if font_.exactMatch():
-            font = font_
+        font.setFamily("Luxi Sans")
     font.setPointSize(pointSize)
     return font
