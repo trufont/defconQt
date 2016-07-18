@@ -218,7 +218,7 @@ class BaseCodeEditor(QPlainTextEdit):
       :func:`setPlainText` is called.
     """
     openBlockDelimiter = None
-    indentChanged = pyqtSignal()
+    indentChanged = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super(BaseCodeEditor, self).__init__(parent)
@@ -252,7 +252,7 @@ class BaseCodeEditor(QPlainTextEdit):
         if self._indent == indent:
             return
         self._indent = indent
-        self.indentChanged.emit()
+        self.indentChanged.emit(self._indent)
 
     def lineNumbersVisible(self):
         """
