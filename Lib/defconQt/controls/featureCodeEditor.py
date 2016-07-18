@@ -44,11 +44,11 @@ class FeatureCodeHighlighter(BaseCodeHighlighter):
 
         keywordFormat = QTextCharFormat()
         keywordFormat.setForeground(QColor(45, 95, 235))
-        self.addRule("[^\\\\]\\b(%s)\\b" % ("|".join(keywordPatterns)),
+        self.addRule("\\b(?<!\\\\)(%s)\\b" % ("|".join(keywordPatterns)),
                      keywordFormat)
 
         singleLineCommentFormat = QTextCharFormat()
-        singleLineCommentFormat.setForeground(Qt.darkGray)
+        singleLineCommentFormat.setForeground(QColor(112, 128, 144))
         self.addRule("#[^\n]*", singleLineCommentFormat)
 
         groupFormat = QTextCharFormat()

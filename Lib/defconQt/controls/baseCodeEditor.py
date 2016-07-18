@@ -10,7 +10,7 @@ from __future__ import division, absolute_import
 from defconQt.tools import drawing, platformSpecific
 from PyQt5.QtCore import pyqtSignal, QRegularExpression, QSize, Qt
 from PyQt5.QtGui import (
-    QColor, QIntValidator, QPainter, QSyntaxHighlighter, QTextCursor)
+    QColor, QIntValidator, QPainter, QPalette, QSyntaxHighlighter, QTextCursor)
 from PyQt5.QtWidgets import (
     QDialog, QDialogButtonBox, QLineEdit, QPlainTextEdit, QVBoxLayout,
     QWidget)
@@ -302,10 +302,10 @@ class BaseCodeEditor(QPlainTextEdit):
         painter = QPainter()
         painter.begin(self.lineNumbers)
         rect = event.rect()
-        painter.fillRect(rect, QColor(230, 230, 230))
+        painter.fillRect(rect, self.palette().color(QPalette.Base))
         d = rect.topRight()
         a = rect.bottomRight()
-        painter.setPen(Qt.darkGray)
+        painter.setPen(QColor(150, 150, 150))
         # Alright. Since we just did setPen() w the default color constructor
         # it set the pen to a cosmetic width (of zero), i.e. drawing one pixel
         # regardless of screen density.
@@ -317,7 +317,6 @@ class BaseCodeEditor(QPlainTextEdit):
         pixelRatio = self.lineNumbers.devicePixelRatio()
         delta = (pixelRatio - 1) / pixelRatio
         drawing.drawLine(painter, d.x() + delta, d.y(), a.x() + delta, a.y())
-        painter.setPen(QColor(100, 100, 100))
         painter.setFont(self.font())
 
         block = self.firstVisibleBlock()
