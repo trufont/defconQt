@@ -22,6 +22,7 @@ import sys
 # Colors
 # ------
 
+
 def colorOpacityMultiplier():
     """
     Returns a transparency multiplier to have consistent system colors on all

@@ -10,10 +10,10 @@ from __future__ import division, absolute_import
 from defconQt.tools import drawing, platformSpecific
 from PyQt5.QtCore import pyqtSignal, QRegularExpression, QSize, Qt
 from PyQt5.QtGui import (
-    QColor, QFontMetricsF, QIntValidator, QPainter, QPalette,
+    QColor, QFontMetricsF, QPainter, QPalette, QRegularExpressionValidator,
     QSyntaxHighlighter, QTextCursor)
 from PyQt5.QtWidgets import (
-    QDialog, QDialogButtonBox, QLineEdit, QPlainTextEdit, QVBoxLayout,
+    QDialog, QLabel, QLineEdit, QPlainTextEdit, QVBoxLayout,
     QWidget)
 import re
 
@@ -29,7 +29,8 @@ __all__ = ["GotoLineDialog", "BaseCodeHighlighter", "BaseCodeEditor"]
 
 class GotoLineDialog(QDialog):
     """
-    A QDialog_ that asks for a line number to the user.
+    A QDialog_ that asks for a line:column number to the user. Column number is
+    optional.
 
     The result may be passed to the :func:`scrollToLine` function of
     :class:`BaseCodeEditor`.
@@ -43,27 +44,31 @@ class GotoLineDialog(QDialog):
         self.setWindowTitle(self.tr("Go to…"))
 
         self.lineEdit = QLineEdit(self)
-        validator = QIntValidator(self)
-        validator.setMinimum(1)
+        validator = QRegularExpressionValidator(self)
+        validator.setRegularExpression(
+            QRegularExpression("(^[1-9][0-9]*(:[1-9][0-9]*)?$)?"))
         self.lineEdit.setValidator(validator)
-        buttonBox = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        buttonBox.accepted.connect(self.accept)
-        buttonBox.rejected.connect(self.reject)
+        self.lineEdit.returnPressed.connect(self.accept)
+        label = QLabel(self.tr("Enter a row:column to go to"), self)
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.lineEdit)
-        layout.addWidget(buttonBox)
+        layout.addWidget(label)
         self.setLayout(layout)
 
     @classmethod
-    def getLineNumber(cls, parent):
+    def getLineColumnNumber(cls, parent):
         dialog = cls(parent)
         result = dialog.exec_()
         newLine = dialog.lineEdit.text()
-        if newLine is not None:
-            newLine = int(newLine)
-        return (newLine, result)
+        if newLine:
+            newLine = [int(nb) for nb in newLine.split(":")]
+        else:
+            newLine = [None]
+        if len(newLine) < 2:
+            newLine.append(None)
+        newLine.append(result)
+        return tuple(newLine)
 
 # ------------
 # Line numbers
@@ -250,6 +255,8 @@ class BaseCodeEditor(QPlainTextEdit):
         Sets this widget’s atomic indent pattern to the string *indent*.
 
         The default is four spaces.
+
+        TODO: reindent document?
         """
         if self._indent == indent:
             return
@@ -304,14 +311,33 @@ class BaseCodeEditor(QPlainTextEdit):
         """
         self._shouldGuessWhitespace = value
 
-    def scrollToLine(self, number):
+    def scrollToLine(self, lineNumber, columnNumber=None):
         """
-        Scrolls this widget’s viewport to the line *number* and sets the text
-        cursor to that line.
+        Scrolls this widget’s viewport to the line *lineNumber* and sets the
+        text cursor to that line, at *columnNumber*. If *columnNumber* is None,
+        bookkeeping will be performed.
+
+        Strictly positive numbers are expected.
         """
-        self.moveCursor(QTextCursor.End)
-        textBlock = self.document().findBlockByLineNumber(number - 1)
-        self.setCursor(QTextCursor(textBlock))
+        lineNumber -= 1
+        if columnNumber is None:
+            columnNumber = self.textCursor().positionInBlock()
+        else:
+            columnNumber -= 1
+        scrollingUp = lineNumber < self.textCursor().blockNumber()
+        # scroll to block
+        textBlock = self.document().findBlockByLineNumber(lineNumber)
+        newCursor = QTextCursor(textBlock)
+        self.setTextCursor(newCursor)
+        # make some headroom
+        one, two = QTextCursor.Down, QTextCursor.Up
+        if scrollingUp:
+            one, two = two, one
+        for move in (one, one, two, two):
+            self.moveCursor(move)
+        # address column
+        newCursor.movePosition(QTextCursor.NextCharacter, n=columnNumber)
+        self.setTextCursor(newCursor)
 
     # ------------
     # Line numbers

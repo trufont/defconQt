@@ -14,7 +14,7 @@ from defconQt.tools import drawing, platformSpecific
 from defconQt.tools.glyphsMimeData import GlyphsMimeData
 from PyQt5.QtCore import pyqtSignal, QRectF, QSize, Qt
 from PyQt5.QtGui import (
-    QColor, QCursor, QDrag, QKeySequence, QPainter, QPainterPath, QPalette)
+    QColor, QCursor, QDrag, QPainter, QPainterPath, QPalette)
 from PyQt5.QtWidgets import QApplication, QScrollArea, QSizePolicy, QWidget
 import math
 import time
