@@ -10,7 +10,8 @@ from __future__ import division, absolute_import
 from defconQt.tools import drawing, platformSpecific
 from PyQt5.QtCore import pyqtSignal, QRegularExpression, QSize, Qt
 from PyQt5.QtGui import (
-    QColor, QIntValidator, QPainter, QPalette, QSyntaxHighlighter, QTextCursor)
+    QColor, QFontMetricsF, QIntValidator, QPainter, QPalette,
+    QSyntaxHighlighter, QTextCursor)
 from PyQt5.QtWidgets import (
     QDialog, QDialogButtonBox, QLineEdit, QPlainTextEdit, QVBoxLayout,
     QWidget)
@@ -223,6 +224,7 @@ class BaseCodeEditor(QPlainTextEdit):
     def __init__(self, parent=None):
         super(BaseCodeEditor, self).__init__(parent)
         self.setFont(platformSpecific.fixedFont())
+        self.setTabWidth(4)
         self._indent = "    "
         self._lineNumbersVisible = True
         self._shouldGuessWhitespace = True
@@ -253,6 +255,23 @@ class BaseCodeEditor(QPlainTextEdit):
             return
         self._indent = indent
         self.indentChanged.emit(self._indent)
+
+    def tabWidth(self):
+        return self._tabWidth
+
+    def setTabWidth(self, value):
+        self._tabWidth = value
+        self.updateTabWidth()
+
+    def updateTabWidth(self):
+        if not hasattr(self, "_tabWidth"):
+            return
+        fM = QFontMetricsF(self.font())
+        pixelWidth = fM.width(' ') * self._tabWidth
+        document = self.document()
+        opt = document.defaultTextOption()
+        opt.setTabStop(pixelWidth)
+        document.setDefaultTextOption(opt)
 
     def lineNumbersVisible(self):
         """
@@ -460,6 +479,10 @@ class BaseCodeEditor(QPlainTextEdit):
     # --------------
     # Other builtins
     # --------------
+
+    def setFont(self, font):
+        super().setFont(font)
+        self.updateTabWidth()
 
     def setPlainText(self, text):
         super(BaseCodeEditor, self).setPlainText(text)
