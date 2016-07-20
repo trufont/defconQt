@@ -192,10 +192,10 @@ class GlyphCellFactoryDrawingController(object):
             sidebearingsColor = sidebearingsColor.darker(110)
         painter.fillRect(xMin, yMin, width, height, baseColor)
         # sidebearings
-        painter.fillRect(QRectF(xMin, yMin, 1, height), sidebearingsColor)
         realPixel = 1 / self.pixelRatio
+        painter.fillRect(QRectF(xMin, yMin, realPixel, height), sidebearingsColor)
         painter.fillRect(QRectF(
-            xMin + width - realPixel, yMin, 1, height), sidebearingsColor)
+            xMin + width - 2 * realPixel, yMin, 2 * realPixel, height), sidebearingsColor)
         # bottom line
         y = yMin + height
         painter.setPen(cellHeaderLineColor)

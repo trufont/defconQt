@@ -267,6 +267,7 @@ class GlyphCellWidget(QWidget):
             paintHeight = paintWidth = 0
         left = 0
         top = cellHeight
+        realPixel = 1 / self.devicePixelRatio()
 
         for index, glyph in enumerate(self._glyphs):
             t = top - cellHeight
@@ -290,9 +291,9 @@ class GlyphCellWidget(QWidget):
                     selectionColor.setAlphaF(
                         .2 * opacityMultiplier if active else .6)
                     pixelRatio = self.devicePixelRatio()
-                    pW = 1 + (pixelRatio - 1) / pixelRatio
                     painter.fillRect(QRectF(
-                        left + 1, t + 1, cellWidth - pW, cellHeight - pW),
+                        left + realPixel, t + 2 * realPixel,
+                        cellWidth - 3 * realPixel, cellHeight - 3 * realPixel),
                         selectionColor)
 
             left += cellWidth
@@ -311,9 +312,10 @@ class GlyphCellWidget(QWidget):
                 w = paintWidth - cellWidth * emptyCells
             else:
                 w = paintWidth
+            w -= realPixel
             drawing.drawLine(painter, 0, top, w, top)
         for i in range(1, self._columnCount+1):
-            left = i * cellWidth
+            left = i * cellWidth - realPixel
             # don't paint on empty cells
             if i > rem:
                 h = paintHeight - cellHeight
