@@ -42,12 +42,12 @@ class GlyphWidget(QWidget):
             showGlyphOffCurvePoints=True,
             showGlyphPointCoordinates=False,
             showGlyphAnchors=True,
+            showGlyphGuidelines=True,
             showGlyphImage=True,
             showGlyphMargins=True,
             showFontVerticalMetrics=True,
             showFontVerticalMetricsTitles=True,
             showFontGuidelines=True,
-            showFontGuidelinesTitles=True,
             showFontPostscriptBlues=False,
             showFontPostscriptFamilyBlues=False,
         )
@@ -359,12 +359,7 @@ class GlyphWidget(QWidget):
 
     def setShowGuidelines(self, value):
         self.setDrawingAttribute("showFontGuidelines", value, None)
-
-    def showGuidelinesTitles(self):
-        return self.drawingAttribute("showFontGuidelinesTitles", None)
-
-    def setShowGuidelinesTitles(self, value):
-        self.setDrawingAttribute("showFontGuidelinesTitles", value, None)
+        self.setDrawingAttribute("showGlyphGuidelines", value, None)
 
     def showOnCurvePoints(self):
         return self.drawingAttribute("showGlyphOnCurvePoints", None)
@@ -436,7 +431,8 @@ class GlyphWidget(QWidget):
             self.drawVerticalMetrics(painter, glyph, layerName)
         # draw the guidelines
         if layerName is None and self.drawingAttribute(
-                "showFontGuidelines", None):
+                "showFontGuidelines", None) or self.drawingAttribute(
+                        "showGlyphGuidelines", None):
             self.drawGuidelines(painter, glyph, layerName)
         # draw the glyph
         if self.drawingAttribute("showGlyphFill", layerName) or \
@@ -470,13 +466,15 @@ class GlyphWidget(QWidget):
             drawText=drawText)
 
     def drawGuidelines(self, painter, glyph, layerName):
-        drawText = self.drawingAttribute(
-            "showFontGuidelinesTitles", layerName) and \
-            self._impliedPointSize > GlyphViewMinSizeForDetails
-        drawLines = self.drawingAttribute("showFontGuidelines", layerName)
-        drawing.drawFontGuidelines(
-            painter, glyph, self._inverseScale, self._drawingRect,
-            drawLines=drawLines, drawText=drawText)
+        drawText = self._impliedPointSize > GlyphViewMinSizeForDetails
+        if self.drawingAttribute("showFontGuidelines", layerName):
+            drawing.drawFontGuidelines(
+                painter, glyph, self._inverseScale, self._drawingRect,
+                drawText=drawText)
+        if self.drawingAttribute("showGlyphGuidelines", layerName):
+            drawing.drawGlyphGuidelines(
+                painter, glyph, self._inverseScale, self._drawingRect,
+                drawText=drawText)
 
     def drawMargins(self, painter, glyph, layerName):
         drawing.drawGlyphMargins(

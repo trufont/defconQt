@@ -41,7 +41,7 @@ _defaultColors = dict(
     fontPostscriptFamilyBlues=QColor.fromRgbF(1, 1, .5, .3),
 
     # guidelines
-    fontGuideline=QColor.fromRgbF(0, 0, 1, .5),
+    fontGuideline=QColor.fromRgbF(1, 0, 0, .5),
 
     # Glyph
     # -----
@@ -62,6 +62,8 @@ _defaultColors = dict(
     glyphOtherPoints=QColor.fromRgbF(.6, .6, .6, 1),
     # anchors
     glyphAnchor=QColor(228, 96, 15, 200),
+    # guidelines
+    glyphGuideline=QColor.fromRgbF(.3, .4, .85, .5),
 )
 
 
@@ -235,7 +237,7 @@ def drawFontVerticalMetrics(painter, glyph, scale, rect, drawLines=True,
 
 
 def drawFontGuidelines(painter, glyph, scale, rect, drawLines=True,
-                       drawText=True):
+                       drawText=True, color=None):
     """
     Draws the font guidelines of the Glyph_ *glyph* in the form of lines if
     *drawLines* is true and text if *drawText* is true using QPainter_
@@ -252,33 +254,72 @@ def drawFontGuidelines(painter, glyph, scale, rect, drawLines=True,
     font = glyph.font
     if font is None:
         return
+    if color is None:
+        color = defaultColor("fontGuideline")
+    _drawGuidelines(painter, font.guidelines, scale, rect, color=color)
+
+
+def drawGlyphGuidelines(painter, glyph, scale, rect, drawLines=True,
+                        drawText=True, color=None):
+    if not (drawLines or drawText):
+        return
+    if color is None:
+        color = defaultColor("glyphGuideline")
+    _drawGuidelines(painter, glyph.guidelines, scale, rect, color=color)
+
+
+def _drawGuidelines(painter, guidelines, scale, rect, drawLines=True,
+                    drawText=True, color=None):
+    if not (drawLines or drawText):
+        return
     xMin, yMin, width, height = rect
     xMax = xMin + width
     yMax = yMin + height
     fontSize = 9
-    for line in font.info.guidelines:
-        color = defaultColor("fontGuideline")
-        if line.color:
-            color = colorToQColor(line.color)
+    for line in guidelines:
+        color_ = color
+        if color_ is None:
+            if line.color:
+                color_ = colorToQColor(line.color)
+            else:
+                color_ = defaultColor("glyphGuideline")
         painter.save()
         painter.setPen(color)
         line1 = None
-        if None not in (line.x, line.y, line.angle):
-            # make an infinite line that intersects *(line.x, line.y)*
-            # 1. make horizontal line from *(line.x, line.y)* of length *diagonal*
-            diagonal = math.sqrt(width**2 + height**2)
-            line1 = QLineF(line.x, line.y, line.x + diagonal, line.y)
-            # 2. set the angle
-            # defcon guidelines are clockwise
-            line1.setAngle(line.angle)
-            # 3. reverse the line and set length to 2 * *diagonal*
-            line1.setPoints(line1.p2(), line1.p1())
-            line1.setLength(2 * diagonal)
+        if None not in (line.x, line.y):
+            if line.angle is not None:
+                # make an infinite line that intersects *(line.x, line.y)*
+                # 1. make horizontal line from *(line.x, line.y)* of length *diagonal*
+                diagonal = math.sqrt(width**2 + height**2)
+                line1 = QLineF(line.x, line.y, line.x + diagonal, line.y)
+                # 2. set the angle
+                # defcon guidelines are clockwise
+                line1.setAngle(line.angle)
+                # 3. reverse the line and set length to 2 * *diagonal*
+                line1.setPoints(line1.p2(), line1.p1())
+                line1.setLength(2 * diagonal)
+            else:
+                line1 = QLineF(xMin, line.y, xMax, line.y)
         textX = 0
         textY = 0
         if drawLines:
             if line1 is not None:
+                # line
                 drawLine(painter, line1.x1(), line1.y1(), line1.x2(), line1.y2())
+                # point
+                x, y = line.x, line.y
+                smoothWidth = 8 * scale
+                smoothHalf = smoothWidth / 2.0
+                painter.save()
+                pointPath = QPainterPath()
+                x -= smoothHalf
+                y -= smoothHalf
+                pointPath.addEllipse(x, y, smoothWidth, smoothWidth)
+                pen = QPen(color_)
+                pen.setWidthF(1 * scale)
+                painter.setPen(pen)
+                painter.drawPath(pointPath)
+                painter.restore()
             else:
                 if line.y is not None:
                     drawLine(painter, xMin, line.y, xMax, line.y)
@@ -286,24 +327,19 @@ def drawFontGuidelines(painter, glyph, scale, rect, drawLines=True,
                     drawLine(painter, line.x, yMin, line.x, yMax)
         if drawText and line.name:
             if line1 is not None:
-                # find where the guideline and the glyph width/height intersect
-                line2 = QLineF(glyph.width + 6 * scale, yMin,
-                               glyph.width + 6 * scale, yMax)
-                line3 = QLineF(xMin, yMax / 2, xMax, yMax / 2)
-                point = QPointF()
-                result = line1.intersect(line2, point)
-                if result == QLineF.NoIntersection:
-                    line1.intersect(line3, point)
-                textX = point.x()
-                textY = point.y()
+                textX = line.x - 6 * scale
+                textY = line.y - 6 * scale
+                xAlign = "center"
             else:
                 if line.y is not None:
-                    textX = glyph.width + 6 * scale
+                    textX = line.glyph.width + 6 * scale
                     textY = line.y - (fontSize / 3.5) * scale
                 elif line.x is not None:
                     textX = line.x + 6 * scale
-                    textY = yMax / 2
-            drawTextAtPoint(painter, line.name, textX, textY, scale)
+                    textY = 0
+                xAlign = "left"
+            drawTextAtPoint(
+                painter, line.name, textX, textY, scale, xAlign=xAlign)
         painter.restore()
 
 # Blues
