@@ -66,12 +66,11 @@ def otherUIFont():
     font = QFont()
     pointSize = 8
     if sys.platform == "win32":
-        font_ = QFont("Segoe UI")
-        if font_.exactMatch():
-            font = font_
+        font.setFamily("Segoe UI")
+        if font.exactMatch():
             pointSize = 9
         else:
-            font = QFont("Lucida Sans Unicode")
+            font.setFamily("Lucida Sans Unicode")
     elif sys.platform == "darwin":
         try:
             platform
