@@ -67,10 +67,6 @@ def otherUIFont():
     pointSize = 8
     if sys.platform == "win32":
         font.setFamily("Segoe UI")
-        if font.exactMatch():
-            pointSize = 9
-        else:
-            font.setFamily("Lucida Sans Unicode")
     elif sys.platform == "darwin":
         try:
             platform
