@@ -74,10 +74,12 @@ class GlyphCellFactoryDrawingController(object):
             self.headerHeight = GlyphCellHeaderHeight
         availableHeight = (height - self.headerHeight) * (
             1.0 - (self.bufferPercent * 2))
+        descender = font.info.descender or -250
+        unitsPerEm = font.info.unitsPerEm or 1000
         self.buffer = height * self.bufferPercent
-        self.scale = availableHeight / font.info.unitsPerEm
+        self.scale = availableHeight / unitsPerEm
         self.xOffset = (width - (glyph.width * self.scale)) / 2
-        self.yOffset = abs(font.info.descender * self.scale) + self.buffer
+        self.yOffset = abs(descender * self.scale) + self.buffer
 
     def getPixmap(self):
         pixmap = QPixmap(self.width * self.pixelRatio, self.height * self.pixelRatio)
