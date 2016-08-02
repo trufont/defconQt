@@ -51,7 +51,6 @@ def fixedFont():
     if sys.platform == "win32":
         # pick Consolas instead of Courier New
         font.setFamily("Consolas")
-        font.setPointSize(11)
     elif sys.platform == "darwin":
         # pick Menlo instead of Monaco
         font.setFamily("Menlo")
