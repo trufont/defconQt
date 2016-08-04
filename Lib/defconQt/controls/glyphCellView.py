@@ -384,7 +384,7 @@ class GlyphCellWidget(QWidget):
     # mouse
 
     def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
+        if event.button() in (Qt.LeftButton, Qt.RightButton):
             self._oldSelection = self._selection
             index = self._findIndexForEvent(event)
             modifiers = event.modifiers()
@@ -414,7 +414,7 @@ class GlyphCellWidget(QWidget):
             super(GlyphCellWidget, self).mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        if event.buttons() & Qt.LeftButton:
+        if event.buttons() & (Qt.LeftButton | Qt.RightButton):
             index = self._findIndexForEvent(event, True)
             if index == self._lastSelectedCell:
                 return
@@ -442,14 +442,14 @@ class GlyphCellWidget(QWidget):
             super(GlyphCellWidget, self).mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
-        if event.button() == Qt.LeftButton:
+        if event.button() in (Qt.LeftButton, Qt.RightButton):
             self._maybeDragPosition = None
             self._oldSelection = None
         else:
             super(GlyphCellWidget, self).mouseReleaseEvent(event)
 
     def mouseDoubleClickEvent(self, event):
-        if event.button() == Qt.LeftButton:
+        if event.button() in (Qt.LeftButton, Qt.RightButton):
             index = self._findIndexForEvent(event)
             if index is not None:
                 self.glyphActivated.emit(self._glyphs[index])
