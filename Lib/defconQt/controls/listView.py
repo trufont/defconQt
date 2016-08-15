@@ -13,8 +13,8 @@ from defcon import Font, Glyph
 from PyQt5.QtCore import pyqtSignal, QAbstractTableModel, QModelIndex, Qt
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (
-    QAbstractItemView, QColorDialog, QProxyStyle, QStyle, QStyleOption,
-    QStyledItemDelegate, QTreeView)
+    QAbstractItemView, QCheckBox, QColorDialog, QProxyStyle, QStyle,
+    QStyleOption, QStyledItemDelegate, QTreeView)
 import collections
 
 __all__ = ["ListView"]
@@ -231,8 +231,14 @@ class OneTwoListModel(AbstractListModel):
 class ListItemDelegate(QStyledItemDelegate):
 
     def createEditor(self, parent, option, index):
-        data = index.data(Qt.DisplayRole)
-        if isinstance(data, QColor):
+        data = index.data(Qt.EditRole)
+        if isinstance(data, bool):
+            checkBox = QCheckBox(parent)
+            checkBox.setChecked(data)
+            checkBox.toggled.connect(
+                lambda: self.setModelData(checkBox, index.model(), index))
+            return checkBox
+        elif isinstance(data, QColor):
             # we have our own ways
             return None
         return super(ListItemDelegate, self).createEditor(parent, option, index)
@@ -243,8 +249,8 @@ class ListItemDelegate(QStyledItemDelegate):
             return "%s %s" % (info.familyName, info.styleName)
         elif isinstance(value, Glyph):
             return value.name
-        elif isinstance(value, QColor):
-            # we'll paint the color instead
+        elif isinstance(value, (QColor, bool)):
+            # we'll paint those instead
             return None
         return super(ListItemDelegate, self).displayText(value, locale)
 
@@ -253,6 +259,14 @@ class ListItemDelegate(QStyledItemDelegate):
         data = index.data(Qt.DisplayRole)
         if isinstance(data, QColor):
             painter.fillRect(option.rect.adjusted(2, 2, -2, -2), data)
+
+    def setModelData(self, editor, model, index):
+        data = index.data(Qt.EditRole)
+        if isinstance(data, bool):
+            value = editor.isChecked()
+            model.setData(index, value)
+        else:
+            super().setModelData(editor, model, index)
 
 
 class ListProxy(QProxyStyle):
