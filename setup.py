@@ -16,9 +16,8 @@ except:
 try:
     import defcon  # noqa
 except:
-    # TODO: upstream
     print("*** Warning: defconQt requires defcon, see:")
-    print("    https://github.com/trufont/defcon")
+    print("    https://github.com/typesupply/defcon")
 
 setup(
     name="defconQt",
