@@ -458,6 +458,7 @@ class GlyphLineWidget(QWidget):
                 return
             self.setPointSize(pointSize)
             self.pointSizeModified.emit(pointSize)
+            event.accept()
         else:
             super(GlyphLineWidget, self).wheelEvent(event)
 
