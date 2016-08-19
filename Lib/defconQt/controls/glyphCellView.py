@@ -186,8 +186,6 @@ class GlyphCellWidget(QWidget):
         self._cellRepresentationArguments = kwargs
         self.update()
 
-    # TODO: glyph detail window
-
     # selection
 
     def selection(self):
@@ -201,7 +199,7 @@ class GlyphCellWidget(QWidget):
         Sets this widget’s selection to a set of indexes *selection*.
 
         *lastSelectedCell* can be specified as an index that’s a member of the
-        *selection* set, otherwise it will be set to max(selection) or None if
+        *selection* set, otherwise it will be set to min(selection) or None if
         *selection* is an empty set.
 
         The default *selection* is set(). The default *lastSelectedCell*
@@ -216,7 +214,7 @@ class GlyphCellWidget(QWidget):
             if not selection:
                 self._lastSelectedCell = None
             else:
-                self._lastSelectedCell = max(self._selection)
+                self._lastSelectedCell = min(self._selection)
         if self._lastSelectedCell is not None:
             self.scrollToCell(self._lastSelectedCell)
         self.selectionChanged.emit()
@@ -280,8 +278,6 @@ class GlyphCellWidget(QWidget):
                 painter.drawPixmap(left, t, pixmap)
 
                 if index in self._selection:
-                    # TODO: draw focusRect on lastSelectedCell
-                    # TODO: inactive color looks odd
                     palette = self.palette()
                     active = palette.currentColorGroup() != QPalette.Inactive
                     opacityMultiplier = platformSpecific.colorOpacityMultiplier()

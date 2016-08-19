@@ -590,6 +590,7 @@ class GlyphWidget(QWidget):
         if event.modifiers() & Qt.ControlModifier:
             step = event.angleDelta().y() / 120.0
             self.zoom(step, event.pos())
+            event.accept()
         else:
             super(GlyphWidget, self).wheelEvent(event)
 
