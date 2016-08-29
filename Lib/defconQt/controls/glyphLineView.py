@@ -544,8 +544,18 @@ class GlyphLineWidget(QWidget):
                 selectionColor = palette.color(QPalette.Highlight)
                 selectionColor.setAlphaF(
                     .2 * opacityMultiplier if active else .9)
-            xMin, yMin, width, _ = rect
+            xMin, yMin, width, height = rect
+            painter.save()
+            if self._drawMetrics:
+                pen = painter.pen()
+                pen.setStyle(Qt.DotLine)
+                pen.setColor(self._metricsColor)
+                painter.setPen(pen)
+                drawing.drawLine(painter, xMin, yMin, xMin, yMin + height)
+                drawing.drawLine(
+                    painter, xMin + width, yMin, xMin + width, yMin + height)
             painter.fillRect(xMin, yMin, width, -26, selectionColor)
+            painter.restore()
 
     def drawImage(self, painter, glyph, layerName, rect):
         drawing.drawGlyphImage(

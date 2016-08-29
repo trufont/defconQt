@@ -304,19 +304,16 @@ class GlyphCellWidget(QWidget):
         for i in range(1, self._rowCount+1):
             top = i * cellHeight - realPixel
             # don't paint on empty cells
+            w = paintWidth - realPixel
             if i == self._rowCount:
-                w = paintWidth - cellWidth * emptyCells
-            else:
-                w = paintWidth
-            w -= realPixel
+                w -= cellWidth * emptyCells
             drawing.drawLine(painter, 0, top, w, top)
         for i in range(1, self._columnCount+1):
             left = i * cellWidth - realPixel
             # don't paint on empty cells
+            h = paintHeight - realPixel
             if i > rem:
-                h = paintHeight - cellHeight
-            else:
-                h = paintHeight
+                h -= cellHeight
             drawing.drawLine(painter, left, 0, left, h)
 
         # drop insertion position
