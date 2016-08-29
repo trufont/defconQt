@@ -54,7 +54,7 @@ class GlyphLineWidget(QWidget):
             showFontPostscriptFamilyBlues=False,
         )
 
-        self._pointSize = 150
+        self._pointSize = 200
         self._scale = 1.0
         self._inverseScale = 0.1
         self._upm = 1000
@@ -70,7 +70,7 @@ class GlyphLineWidget(QWidget):
         self._backgroundColor = Qt.white
         self._glyphColor = Qt.black
         self._glyphSelectionColor = None
-        self._metricsColor = QColor(60, 60, 60)
+        self._metricsColor = QColor(160, 160, 245)
         self._notdefBackgroundColor = QColor(255, 204, 204)
 
         self._glyphRecords = []
