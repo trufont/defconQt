@@ -10,6 +10,7 @@ The *glyphLineView* submodule provides widgets that render a list of Glyph_ or
 """
 from __future__ import division, absolute_import
 from defcon import Glyph
+from defconQt.controls.glyphCellView import cellGridColor
 from defconQt.tools import drawing, platformSpecific
 from PyQt5.QtCore import pyqtSignal, QRectF, QSize, Qt
 from PyQt5.QtGui import QColor, QPainter, QPalette
@@ -70,7 +71,7 @@ class GlyphLineWidget(QWidget):
         self._backgroundColor = Qt.white
         self._glyphColor = Qt.black
         self._glyphSelectionColor = None
-        self._metricsColor = QColor(160, 160, 245)
+        self._metricsColor = cellGridColor
         self._notdefBackgroundColor = QColor(255, 204, 204)
 
         self._glyphRecords = []
@@ -542,8 +543,9 @@ class GlyphLineWidget(QWidget):
                 opacityMultiplier = platformSpecific.colorOpacityMultiplier()
                 selectionColor = palette.color(QPalette.Highlight)
                 selectionColor.setAlphaF(
-                    .15 * opacityMultiplier if active else .8)
-            painter.fillRect(QRectF(*rect), selectionColor)
+                    .2 * opacityMultiplier if active else .9)
+            xMin, yMin, width, _ = rect
+            painter.fillRect(xMin, yMin, width, -26, selectionColor)
 
     def drawImage(self, painter, glyph, layerName, rect):
         drawing.drawGlyphImage(

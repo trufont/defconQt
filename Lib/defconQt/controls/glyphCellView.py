@@ -22,8 +22,8 @@ import unicodedata
 
 
 backgroundColor = Qt.white
-gridColor = QColor(190, 190, 190)
-insertionLocationColor = QColor.fromRgbF(.16, .3, .85, 1)
+cellGridColor = QColor(190, 190, 190)
+insertionPositionColor = QColor.fromRgbF(.16, .3, .85, 1)
 
 
 class GlyphCellWidget(QWidget):
@@ -288,7 +288,7 @@ class GlyphCellWidget(QWidget):
                         .2 * opacityMultiplier if active else .6)
                     pixelRatio = self.devicePixelRatio()
                     painter.fillRect(QRectF(
-                        left + realPixel, t + 2 * realPixel,
+                        left + realPixel, t + realPixel,
                         cellWidth - 3 * realPixel, cellHeight - 3 * realPixel),
                         selectionColor)
 
@@ -297,12 +297,12 @@ class GlyphCellWidget(QWidget):
                 left = 0
                 top += cellHeight
 
-        # lines h/v
+        # h/v lines
         emptyCells = columnCount * rowCount - len(self._glyphs)
         rem = columnCount - emptyCells
-        painter.setPen(gridColor)
+        painter.setPen(cellGridColor)
         for i in range(1, self._rowCount+1):
-            top = i * cellHeight
+            top = i * cellHeight - realPixel
             # don't paint on empty cells
             if i == self._rowCount:
                 w = paintWidth - cellWidth * emptyCells
@@ -344,7 +344,7 @@ class GlyphCellWidget(QWidget):
             painter.setPen(pen)
             painter.setRenderHint(QPainter.Antialiasing)
             painter.drawPath(path)
-            painter.fillPath(path, insertionLocationColor)
+            painter.fillPath(path, insertionPositionColor)
 
     # ---------
     # Selection

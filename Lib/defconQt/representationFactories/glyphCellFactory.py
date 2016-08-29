@@ -6,7 +6,7 @@ from PyQt5.QtCore import QRectF, Qt
 from PyQt5.QtGui import (
     QColor, QFontMetrics, QLinearGradient, QPainter, QPixmap)
 
-GlyphCellHeaderHeight = 14
+GlyphCellHeaderHeight = 13
 GlyphCellMinHeightForHeader = 40
 GlyphCellMinHeightForMetrics = 90
 
