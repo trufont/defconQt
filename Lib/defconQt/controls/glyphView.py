@@ -261,6 +261,8 @@ class GlyphWidget(QWidget):
         Note that canvas coordinates are scale-independent while widget
         coordinates are not.
         """
+        if self._drawingRect is None:
+            self._calculateDrawingRect()
         xOffsetInv, yOffsetInv, _, _ = self._drawingRect
         x = (pos.x() - xOffsetInv) * self._scale
         y = (pos.y() - yOffsetInv) * (- self._scale) + self.height()
@@ -273,6 +275,8 @@ class GlyphWidget(QWidget):
         Note that canvas coordinates are scale-independent while widget
         coordinates are not.
         """
+        if self._drawingRect is None:
+            self._calculateDrawingRect()
         xOffsetInv, yOffsetInv, _, _ = self._drawingRect
         x = pos.x() * self._inverseScale + xOffsetInv
         y = (pos.y() - self.height()) * (- self._inverseScale) + yOffsetInv

@@ -72,7 +72,7 @@ def otherUIFont():
         except NameError:
             import platform
         if platform.mac_ver()[0].startswith("10.10"):
-            font = QFont("Lucida Grande")
+            font.setFamily("Lucida Grande")
         pointSize = 11
     elif sys.platform.startswith("linux"):
         font.setFamily("Luxi Sans")
