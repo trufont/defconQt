@@ -23,7 +23,7 @@ UIFont = platformSpecific.otherUIFont()
 
 
 class GlyphWidget(QWidget):
-    pointSizeChanged = pyqtSignal(int)
+    pointSizeModified = pyqtSignal(int)
 
     def __init__(self, parent=None):
         super(GlyphWidget, self).__init__(parent)
@@ -91,7 +91,6 @@ class GlyphWidget(QWidget):
             self._scale = .01
         self._inverseScale = 1.0 / self._scale
         self._impliedPointSize = self._unitsPerEm * self._scale
-        self.pointSizeChanged.emit(self._impliedPointSize)
         self.adjustSize()
 
     def glyph(self):
@@ -208,6 +207,7 @@ class GlyphWidget(QWidget):
             fitHeight / glyphHeight, fitWidth / glyphWidth))
         self.centerOn(self.mapFromCanvas(
             QPointF(left + (right - left) / 2, bottom + (top - bottom) / 2)))
+        self.pointSizeModified.emit(self._impliedPointSize)
 
     def zoom(self, step, anchor="center"):
         """
@@ -227,28 +227,30 @@ class GlyphWidget(QWidget):
         """
         oldScale = self._scale
         newScale = self._scale * pow(1.2, step)
-        shouldScroll = None not in (anchor, self._scrollArea)
+        scrollArea = self._scrollArea
         if newScale < 1e-2 or newScale > 1e3:
             return
-        if shouldScroll:
+        if scrollArea is not None:
             # compute new scrollbar position
             # http://stackoverflow.com/a/32269574/2037879
-            hSB = self._scrollArea.horizontalScrollBar()
-            vSB = self._scrollArea.verticalScrollBar()
+            hSB = scrollArea.horizontalScrollBar()
+            vSB = scrollArea.verticalScrollBar()
+            viewport = scrollArea.viewport()
             if isinstance(anchor, QPoint):
                 pos = anchor
             elif anchor == "cursor":
                 pos = self.mapFromGlobal(QCursor.pos())
             elif anchor == "center":
-                pos = QPoint(self.width() / 2, self.height() / 2)
+                pos = self.mapFromParent(
+                    QPoint(viewport.width() / 2, viewport.height() / 2))
             else:
                 raise ValueError("invalid anchor value: {}".format(anchor))
             scrollBarPos = QPointF(hSB.value(), vSB.value())
-            deltaToPos = (self.mapToParent(pos) - self.pos()) / oldScale
+            deltaToPos = pos / oldScale
             delta = deltaToPos * (newScale - oldScale)
         self.setScale(newScale)
         self.update()
-        if shouldScroll:
+        if scrollArea is not None:
             hSB.setValue(scrollBarPos.x() + delta.x())
             vSB.setValue(scrollBarPos.y() + delta.y())
 
@@ -594,6 +596,7 @@ class GlyphWidget(QWidget):
         if event.modifiers() & Qt.ControlModifier:
             step = event.angleDelta().y() / 120.0
             self.zoom(step, event.pos())
+            self.pointSizeModified.emit(self._impliedPointSize)
             event.accept()
         else:
             super(GlyphWidget, self).wheelEvent(event)
@@ -611,6 +614,8 @@ class GlyphView(QScrollArea):
 
         self._glyphWidget = self.glyphWidgetClass(self)
         self._glyphWidget.setScrollArea(self)
+
+        self.pointSizeModified = self._glyphWidget.pointSizeModified
 
     # -------------
     # Notifications
@@ -647,6 +652,12 @@ class GlyphView(QScrollArea):
     # --------------
     # Public Methods
     # --------------
+
+    def scale(self):
+        return self._glyphWidget.scale()
+
+    def setScale(self, scale):
+        self._glyphWidget.setScale(scale)
 
     def glyph(self):
         return self._glyphWidget.glyph()

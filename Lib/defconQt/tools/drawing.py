@@ -95,27 +95,20 @@ def defaultColor(name):
 # ----------
 
 
-def drawLine(painter, x1, y1, x2, y2, lineWidth=1.0):
+def drawLine(painter, x1, y1, x2, y2, lineWidth=0):
     """
     Draws a line from *(x1, y1)* to *(x2, y2)* with a thickness of *lineWidth*
     and using QPainter_ *painter*.
 
     Compared to the built-in ``painter.drawLine(…)`` method, this will disable
-    antialiasing for horizontal/vertical lines and use a `cosmetic pen`_ with
-    the default *thickness*.
+    antialiasing for horizontal/vertical lines.
 
     .. _`cosmetic pen`: http://doc.qt.io/qt-5/qpen.html#isCosmetic
     .. _QPainter: http://doc.qt.io/qt-5/qpainter.html
     """
     painter.save()
-    turnOffAntiAliasing = False
     if x1 == x2 or y1 == y2:
-        turnOffAntiAliasing = True
-    if turnOffAntiAliasing:
         painter.setRenderHint(QPainter.Antialiasing, False)
-        if lineWidth == 1.0:
-            # cosmetic pen
-            lineWidth = 0
     pen = painter.pen()
     pen.setWidthF(lineWidth)
     painter.setPen(pen)
