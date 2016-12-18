@@ -26,7 +26,6 @@ setup(
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
-        "Environment :: GUI",
         "Environment :: X11 Applications :: Qt",
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: Microsoft :: Windows",
