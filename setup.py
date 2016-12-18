@@ -21,7 +21,7 @@ except:
 
 setup(
     name="defconQt",
-    version="0.1.0",
+    version="0.2.0.dev0",
     description="A set of Qt objects for use in defcon applications.",
     author="Adrien Tétar",
     author_email="adri-from-59@hotmail.fr",
