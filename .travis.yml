@@ -1,0 +1,25 @@
+sudo: false
+language: python
+
+matrix:
+  include:
+    - python: 3.5
+      env: TOXENV=py35
+
+install: pip install -U tox
+
+script: tox
+
+deploy:
+  # deploy to PyPI on tags
+  provider: pypi
+  server: https://upload.pypi.org/legacy/
+  on:
+    repo: trufont/defconQt
+    tags: true
+    all_branches: true
+    python: 3.5
+  user: anthrotype
+  password:
+    secure: wOjFiCasqe/tHn5LIUO63W4WfLz2rsbGF+NICOQiyLfktmNt13WW95t9vi1FPo039frTttInaYIHN5faYObwwj1qJRtw5qo8WQ53QUUj9xX2eh1kfGH19Vzlljdl7mQnXZcOu2/NgInzYtUoE2oufkfxNZXDe9iw0nQKPNfuyyfedLu1C4EUY+8GW/gn8TleVPR76wNdGwMZpKCyD/T+uP7jiGj4UJ8q5pfRCnlIxTkA3U6KCI5qlyLt1BFF+Hm5WTEp/JZfwDyp++odftFrj8tBbvt/Hix2+ubWtf4WB2rA86PYa2+kxrffOqKSjZUvbTw1EfqJ17CdNmadjWGVHYqzYc4nrv3lIIiHlJFrCvxnO7czlfH7azZMtN8m5aQL+6bs9Q8kXa0xAVAd5Fzm5GieoIN0yBPONz3W0MZ6PefDKBMm2u8JMxgq9boEVl6dxmkQT2dnP0CfItSk9v/E6Uq7HXOXoNkKfTCgLQZ9TR2EWrc30RBm3Fi9+y77HgYqeYstdavylhnZJ68hua1nvtSy22wk7DiNvoEtAMG/BFyey+vElUozmFUYdgg485gZleBePMQGfPWNKOF7+ZoqCPgquQGoOJt0rQGoleBGaVli+SeYrU4M+Zw6p+iYazNCY3C6Fl+SvKQpTRK/Jl3YlDyyq1Say1b4S+0NyF+EfRw=
+  distributions: sdist bdist_wheel
