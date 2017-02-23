@@ -10,13 +10,14 @@ in cells with their names drawn inside headers.
 """
 from __future__ import division, absolute_import
 from defcon import Glyph
-from defconQt.tools import drawing, platformSpecific
+from defconQt.representationFactories.glyphCellFactory import (
+    GlyphCellHeaderHeight, GlyphCellMinHeightForHeader)
+from defconQt.tools import platformSpecific
 from defconQt.tools.glyphsMimeData import GlyphsMimeData
 from PyQt5.QtCore import pyqtSignal, QRectF, QSize, Qt
 from PyQt5.QtGui import (
     QColor, QCursor, QDrag, QPainter, QPainterPath, QPalette)
 from PyQt5.QtWidgets import QApplication, QScrollArea, QSizePolicy, QWidget
-import math
 import time
 import unicodedata
 
@@ -24,6 +25,8 @@ import unicodedata
 backgroundColor = Qt.white
 cellGridColor = QColor(190, 190, 190)
 insertionPositionColor = QColor.fromRgbF(.16, .3, .85, 1)
+
+cacheBustSize = 10
 
 
 class GlyphCellWidget(QWidget):
@@ -55,6 +58,8 @@ class GlyphCellWidget(QWidget):
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self._cellWidth = 50
         self._cellHeight = 50
+        self._cellWidthExtra = 0
+        self._cellSizeCache = set()
         self._glyphs = []
 
         self._inputString = ""
@@ -85,9 +90,11 @@ class GlyphCellWidget(QWidget):
     def _getCurrentRepresentation(self, glyph):
         name = self._cellRepresentationName
         args = self._cellRepresentationArguments
-        args["width"] = self._cellWidth
+        args["width"] = self._cellWidth + 2 * self._cellWidthExtra
         args["height"] = self._cellHeight
         args["pixelRatio"] = self.devicePixelRatio()
+
+        self._cellSizeCache.add((args["width"], args["height"]))
         return glyph.getRepresentation(name, **args)
 
     def preloadGlyphCellImages(self):
@@ -150,6 +157,8 @@ class GlyphCellWidget(QWidget):
             height = width
         self._cellWidth = width
         self._cellHeight = height
+        self._calculateCellWidthExtra()
+        self._checkFlushCache()
         self.adjustSize()
 
     def cellRepresentationName(self):
@@ -220,11 +229,27 @@ class GlyphCellWidget(QWidget):
         self.selectionChanged.emit()
         self.update()
 
+    def lastSelectedCell(self):
+        return self._lastSelectedCell
+
     def lastSelectedGlyph(self):
         cell = self._lastSelectedCell
         if cell is not None:
             return self._glyphs[cell]
         return None
+
+    def _calculateCellWidthExtra(self):
+        if self._columnCount:
+            rem = self.width() % self._cellWidth
+            self._cellWidthExtra = rem // (2 * self._columnCount)
+        else:
+            self._cellWidthExtra = 0
+
+    def _checkFlushCache(self):
+        if len(self._cellSizeCache) >= cacheBustSize:
+            for glyph in self._glyphs:
+                glyph.destroyRepresentation(self._cellRepresentationName)
+            self._cellSizeCache = set()
 
     # ----------
     # Qt methods
@@ -255,28 +280,23 @@ class GlyphCellWidget(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
         visibleRect = event.rect()
-        columnCount, rowCount = self._columnCount, self._rowCount
-        cellWidth, cellHeight = self._cellWidth, self._cellHeight
+        columnCount = self._columnCount
+        extra = self._cellWidthExtra
+        cellWidth, cellHeight = self._cellWidth + 2 * extra, self._cellHeight
         glyphCount = len(self._glyphs)
         if columnCount:
-            paintHeight = math.ceil(glyphCount / columnCount) * cellHeight
             paintWidth = min(glyphCount, columnCount) * cellWidth
         else:
-            paintHeight = paintWidth = 0
+            paintWidth = 0
         left = 0
         top = cellHeight
-        realPixel = 1 / self.devicePixelRatio()
 
+        painter.fillRect(visibleRect, Qt.white)
         for index, glyph in enumerate(self._glyphs):
             t = top - cellHeight
             rect = (left, t, cellWidth, cellHeight)
 
-            painter.fillRect(*(rect+(backgroundColor,)))
-
             if visibleRect.intersects(visibleRect.__class__(*rect)):
-                pixmap = self._getCurrentRepresentation(glyph)
-                painter.drawPixmap(left, t, pixmap)
-
                 if index in self._selection:
                     palette = self.palette()
                     active = palette.currentColorGroup() != QPalette.Inactive
@@ -285,36 +305,26 @@ class GlyphCellWidget(QWidget):
                     # TODO: alpha values somewhat arbitrary (here and in
                     # glyphLineView)
                     selectionColor.setAlphaF(
-                        .2 * opacityMultiplier if active else .6)
-                    pixelRatio = self.devicePixelRatio()
+                        .2 * opacityMultiplier if active else .7)
                     painter.fillRect(QRectF(
-                        left + realPixel, t + realPixel,
-                        cellWidth - 3 * realPixel, cellHeight - 3 * realPixel),
+                        left, t, cellWidth, cellHeight),
+                        selectionColor)
+
+                pixmap = self._getCurrentRepresentation(glyph)
+                painter.drawPixmap(left, t, pixmap)
+
+                # XXX: this hacks around the repr internals
+                if index in self._selection and \
+                        cellHeight >= GlyphCellMinHeightForHeader:
+                    painter.fillRect(QRectF(
+                        left, t + cellHeight - GlyphCellHeaderHeight,
+                        cellWidth, GlyphCellHeaderHeight),
                         selectionColor)
 
             left += cellWidth
             if left + cellWidth > paintWidth:
                 left = 0
                 top += cellHeight
-
-        # h/v lines
-        emptyCells = columnCount * rowCount - len(self._glyphs)
-        rem = columnCount - emptyCells
-        painter.setPen(cellGridColor)
-        for i in range(1, self._rowCount+1):
-            top = i * cellHeight - realPixel
-            # don't paint on empty cells
-            w = paintWidth - realPixel
-            if i == self._rowCount:
-                w -= cellWidth * emptyCells
-            drawing.drawLine(painter, 0, top, w, top)
-        for i in range(1, self._columnCount+1):
-            left = i * cellWidth - realPixel
-            # don't paint on empty cells
-            h = paintHeight - realPixel
-            if i > rem:
-                h -= cellHeight
-            drawing.drawLine(painter, left, 0, left, h)
 
         # drop insertion position
         dropIndex = self._currentDropIndex
@@ -342,6 +352,10 @@ class GlyphCellWidget(QWidget):
             painter.setRenderHint(QPainter.Antialiasing)
             painter.drawPath(path)
             painter.fillPath(path, insertionPositionColor)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._calculateCellWidthExtra()
 
     # ---------
     # Selection
@@ -437,6 +451,10 @@ class GlyphCellWidget(QWidget):
     def mouseReleaseEvent(self, event):
         if event.button() in (Qt.LeftButton, Qt.RightButton):
             self._maybeDragPosition = None
+            # XXX: we should use modifiers registered on click
+            if not event.modifiers() & Qt.ShiftModifier:
+                self._selection = {self._lastSelectedCell}
+                self.update()
             self._oldSelection = None
         else:
             super(GlyphCellWidget, self).mouseReleaseEvent(event)
@@ -450,7 +468,7 @@ class GlyphCellWidget(QWidget):
             super(GlyphCellWidget, self).mouseDoubleClickEvent(event)
 
     def _findIndexForEvent(self, event, allowAllViewport=False):
-        cellHeight, cellWidth = self._cellHeight, self._cellWidth
+        cellHeight, cellWidth = self._cellHeight, self._cellWidth + self._cellWidthExtra * 2
         glyphCount = len(self._glyphs)
         x, y = event.x(), event.y()
         visibleWidth = min(glyphCount, self._columnCount) * cellWidth
@@ -775,6 +793,9 @@ class GlyphCellView(QScrollArea):
 
     def setSelection(self, selection, lastSelectedCell=None):
         self._glyphCellWidget.setSelection(selection, lastSelectedCell)
+
+    def lastSelectedCell(self):
+        return self._glyphCellWidget.lastSelectedCell()
 
     def lastSelectedGlyph(self):
         return self._glyphCellWidget.lastSelectedGlyph()

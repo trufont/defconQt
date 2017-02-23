@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import (
     QColorDialog, QSizePolicy, QStyle, QStyleOptionFrame, QStylePainter,
     QWidget)
 
-strikeColor = QColor(170, 0, 0)
+strikeColor = QColor(144, 60, 74)
 
 
 class ColorVignette(QWidget):

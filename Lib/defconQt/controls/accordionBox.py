@@ -11,28 +11,12 @@ only one is open at a time.
 """
 from __future__ import absolute_import
 from PyQt5.QtCore import QObject
+from PyQt5.QtGui import QColor, QFont, QPalette
 from PyQt5.QtWidgets import (
-    QGroupBox, QProxyStyle, QStyle, QStyleOption, QWidget)
+    QGroupBox, QProxyStyle, QStyle, QStylePainter, QStyleOptionGroupBox,
+    QWidget)
 
 __all__ = ["AccordionGroup", "AccordionBox"]
-
-
-class AccordionProxy(QProxyStyle):
-
-    def drawPrimitive(self, element, option, painter, widget):
-        if element == QStyle.PE_IndicatorCheckBox and isinstance(
-                widget, QGroupBox):
-            element_ = QStyle.PE_IndicatorBranch
-            option_ = QStyleOption()
-            option_.initFrom(widget)
-            option_.rect = option.rect
-            option_.rect.translate(0, 1)
-            option_.state |= QStyle.State_Children
-            if widget.isChecked():
-                option_.state |= QStyle.State_Open
-            super(AccordionProxy, self).drawPrimitive(element_, option_, painter, widget)
-        else:
-            super(AccordionProxy, self).drawPrimitive(element, option, painter, widget)
 
 
 class AccordionGroup(QObject):
@@ -155,6 +139,20 @@ class AccordionGroup(QObject):
         return self._currentAccordion
 
 
+class AccordionProxy(QProxyStyle):
+
+    def subControlRect(self, control, option, subControl, widget):
+        rect = super().subControlRect(control, option, subControl, widget)
+        if subControl == QStyle.SC_GroupBoxContents:
+            x1, y1, x2, y2 = rect.getCoords()
+            # XXX: cross-platform hazard
+            # also why do we have to do this?
+            x1 -= 8
+            x2 += 8
+            rect.setCoords(x1, y1, x2, y2)
+        return rect
+
+
 class AccordionBox(QGroupBox):
     """
     A QGroupBox_ that can fold/unfold to reveal or hide its contents.
@@ -164,10 +162,31 @@ class AccordionBox(QGroupBox):
 
     def __init__(self, title=None, parent=None):
         super(AccordionBox, self).__init__(title, parent)
-        self.setCheckable(True)
+        #self.setCheckable(True)
+        self.setContentsMargins(0, 0, 0, 0)
         self.setFlat(True)
+        # TODO: should this really be in the base widget?
+        font = self.font()
+        font.setCapitalization(QFont.AllUppercase)
+        font.setLetterSpacing(QFont.AbsoluteSpacing, 1)
+        font.setPointSize(8)
+        self.setFont(font)
+        palette = self.palette()
+        palette.setColor(QPalette.WindowText, QColor(120, 120, 120))
+        self.setPalette(palette)
         self.setStyle(AccordionProxy())
         self.toggled.connect(self._togglePanel)
+
+    def initStyleOption(self, option):
+        super().initStyleOption(option)
+        option.lineWidth = 0
+        option.subControls ^= QStyle.SC_GroupBoxFrame
+
+    def paintEvent(self, event):
+        painter = QStylePainter(self)
+        option = QStyleOptionGroupBox()
+        self.initStyleOption(option)
+        painter.drawComplexControl(QStyle.CC_GroupBox, option)
 
     def _togglePanel(self, value):
         groupBox = self.sender()

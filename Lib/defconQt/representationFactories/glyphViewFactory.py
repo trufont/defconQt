@@ -14,8 +14,9 @@ from fontTools.pens.basePen import BasePen
 from fontTools.pens.transformPen import TransformPen
 from fontTools.pens.qtPen import QtPen
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPainter, QPixmap
+from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QGraphicsColorizeEffect
+from defconQt.tools.drawing import applyEffectToPixmap
 from ufoLib.pointPen import AbstractPointPen
 import math
 
@@ -92,17 +93,16 @@ class OutlineInformationPen(AbstractPointPen):
         self._bezierHandleData = []
 
     def getData(self):
-        data = dict(startPoints=[], onCurvePoints=[], offCurvePoints=[],
-                    bezierHandles=[], anchors=[],
-                    components=self._rawComponentData)
+        data = dict(onCurvePoints=[], offCurvePoints=[], bezierHandles=[],
+                    anchors=[], components=self._rawComponentData)
         for contour in self._rawPointData:
             # anchor
+            # TODO: UFO3 doesn't do this?
             if len(contour) == 1 and contour[0]["name"] is not None:
                 anchor = contour[0]
                 data["anchors"].append(anchor)
             # points
             else:
-                haveFirst = False
                 for pointIndex, point in enumerate(contour):
                     if point["segmentType"] is None:
                         data["offCurvePoints"].append(point)
@@ -113,7 +113,7 @@ class OutlineInformationPen(AbstractPointPen):
                             p1 = back["point"]
                             p2 = point["point"]
                             if p1 != p2:
-                                data["bezierHandles"].append((p1, p2))
+                                data["bezierHandles"].append(p1+p2)
                             # only allow two handles a point for qcurve
                             if forward["segmentType"] != "qcurve":
                                 continue
@@ -121,17 +121,13 @@ class OutlineInformationPen(AbstractPointPen):
                             p1 = forward["point"]
                             p2 = point["point"]
                             if p1 != p2:
-                                data["bezierHandles"].append((p1, p2))
+                                data["bezierHandles"].append(p1+p2)
                     else:
-                        data["onCurvePoints"].append(point)
                         # catch first point
-                        if not haveFirst:
-                            haveFirst = True
+                        if not pointIndex or point["smooth"]:
                             nextOn = None
                             for nextPoint in contour[pointIndex:] + \
                                     contour[:pointIndex]:
-                                #if nextPoint["segmentType"] is None:
-                                #    continue
                                 if nextPoint["point"] == point["point"]:
                                     continue
                                 nextOn = nextPoint
@@ -142,9 +138,16 @@ class OutlineInformationPen(AbstractPointPen):
                                 x2, y2 = nextOn["point"]
                                 xDiff = x2 - x1
                                 yDiff = y2 - y1
-                                angle = round(math.atan2(
-                                    yDiff, xDiff) * 180 / math.pi, 3)
-                            data["startPoints"].append((point["point"], angle))
+                                angle = math.atan2(yDiff, xDiff)
+                            # store
+                            if not pointIndex:
+                                point["startPointAngle"] = angle
+                            if point["smooth"]:
+                                # no point storing None angle here
+                                if angle is not None:
+                                    angle -= .5 * math.pi
+                                    point["smoothAngle"] = angle
+                        data["onCurvePoints"].append(point)
         return data
 
     def beginPath(self):
@@ -183,9 +186,7 @@ def QPixmapFactory(image):
     pixmap = QPixmap()
     pixmap.loadFromData(data)
     if imageColor is not None:
-        # TODO: test this
-        painter = QPainter(pixmap)
         colorEffect = QGraphicsColorizeEffect()
         colorEffect.setColor(imageColor)
-        colorEffect.draw(painter)
+        return applyEffectToPixmap(pixmap, colorEffect)
     return pixmap

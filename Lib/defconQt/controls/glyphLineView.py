@@ -452,7 +452,7 @@ class GlyphLineWidget(QWidget):
             super(GlyphLineWidget, self).mouseDoubleClickEvent(event)
 
     def wheelEvent(self, event):
-        if event.modifiers() & Qt.ControlModifier:
+        if event.modifiers() & platformSpecific.scaleModifier():
             scale = pow(1.2, event.angleDelta().y() / 120.0)
             pointSize = round(self._pointSize * scale)
             if pointSize <= 0:

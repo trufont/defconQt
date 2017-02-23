@@ -517,7 +517,7 @@ class BaseCodeEditor(QPlainTextEdit):
             self.setIndent(indent)
 
     def wheelEvent(self, event):
-        if event.modifiers() & Qt.ControlModifier:
+        if event.modifiers() & platformSpecific.scaleModifier():
             font = self.font()
             newPointSize = font.pointSize() + event.angleDelta().y() / 120.0
             if newPointSize < 6:

@@ -42,6 +42,16 @@ def _bootstrapGCCache(self):
     app._windowCache.add(self)
 
 
+def _flushGCCache(self):
+    app = QApplication.instance()
+    try:
+        app._windowCache.remove(self)
+    except KeyError:
+        # if self.close() is called more than once we'll end up
+        # here. that's fine
+        pass
+
+
 class BaseMainWindow(QMainWindow):
     """
     A QMainWindow top-level window that keeps itself alive until it’s closed.
@@ -59,8 +69,7 @@ class BaseMainWindow(QMainWindow):
     def closeEvent(self, event):
         super(BaseMainWindow, self).closeEvent(event)
         if event.isAccepted():
-            app = QApplication.instance()
-            app._windowCache.remove(self)
+            _flushGCCache(self)
 
 
 class BaseWindow(QWidget):
@@ -82,5 +91,4 @@ class BaseWindow(QWidget):
     def closeEvent(self, event):
         super(BaseWindow, self).closeEvent(event)
         if event.isAccepted():
-            app = QApplication.instance()
-            app._windowCache.remove(self)
+            _flushGCCache(self)

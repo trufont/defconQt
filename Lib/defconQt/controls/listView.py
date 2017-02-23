@@ -10,11 +10,12 @@ lists_.
 """
 from __future__ import absolute_import
 from defcon import Font, Glyph
+from defconQt.tools import drawing
 from PyQt5.QtCore import pyqtSignal, QAbstractTableModel, QModelIndex, Qt
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (
-    QAbstractItemView, QCheckBox, QColorDialog, QProxyStyle, QStyle,
-    QStyleOption, QStyledItemDelegate, QTreeView)
+    QAbstractItemView, QApplication, QCheckBox, QColorDialog, QProxyStyle,
+    QStyle, QStyleOption, QStyledItemDelegate, QTreeView)
 import collections
 
 __all__ = ["ListView"]
@@ -258,7 +259,16 @@ class ListItemDelegate(QStyledItemDelegate):
         super().paint(painter, option, index)
         data = index.data(Qt.DisplayRole)
         if isinstance(data, QColor):
-            painter.fillRect(option.rect.adjusted(2, 2, -2, -2), data)
+            rect = option.rect.adjusted(2, 1, -2, -1)
+            if data.isValid():
+                painter.fillRect(rect, data)
+            else:
+                backgroundColor = QColor(214, 214, 214)
+                color = QColor(170, 170, 170)
+                tileSize = round(rect.height() / 3)
+                drawing.drawTiles(
+                    painter, rect, tileSize=tileSize, color=color,
+                    backgroundColor=backgroundColor)
 
     def setModelData(self, editor, model, index):
         data = index.data(Qt.EditRole)
@@ -331,12 +341,16 @@ class ListView(QTreeView):
             return
         data = model.data(index)
         if isinstance(data, QColor):
-            dialog = QColorDialog(self)
-            dialog.setCurrentColor(data)
-            ret = dialog.exec_()
-            if ret:
-                color = dialog.currentColor()
-                model.setData(index, color)
+            if QApplication.keyboardModifiers() & Qt.AltModifier:
+                model.setData(index, QColor())
+            else:
+                dialog = QColorDialog(self)
+                dialog.setCurrentColor(data)
+                dialog.setOption(QColorDialog.ShowAlphaChannel)
+                ret = dialog.exec_()
+                if ret:
+                    color = dialog.currentColor()
+                    model.setData(index, color)
 
     # -------------------
     # Convenience methods

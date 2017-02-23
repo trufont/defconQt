@@ -27,6 +27,7 @@ class GlyphWidget(QWidget):
 
     def __init__(self, parent=None):
         super(GlyphWidget, self).__init__(parent)
+        self.setContextMenuPolicy(Qt.DefaultContextMenu)
         self.setFocusPolicy(Qt.ClickFocus)
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self._glyph = None
@@ -42,14 +43,15 @@ class GlyphWidget(QWidget):
             showGlyphOffCurvePoints=True,
             showGlyphPointCoordinates=False,
             showGlyphAnchors=True,
+            showGlyphMetrics=True,
             showGlyphGuidelines=True,
             showGlyphImage=True,
-            showGlyphMargins=True,
             showFontVerticalMetrics=True,
-            showFontVerticalMetricsTitles=True,
+            showFontVerticalMetricsTitles=False,
             showFontGuidelines=True,
-            showFontPostscriptBlues=False,
-            showFontPostscriptFamilyBlues=False,
+            showFontPostscriptBlues=True,
+            showFontPostscriptFamilyBlues=False,  # TODO: test appearance of this
+                                                  # combined w/ blues
         )
 
         # cached vertical metrics
@@ -81,6 +83,26 @@ class GlyphWidget(QWidget):
 
     def inverseScale(self):
         return self._inverseScale
+
+    def pointSize(self):
+        return self._impliedPointSize
+
+    def setPointSize(self, pointSize):
+        scrollArea = self._scrollArea
+        newScale = pointSize / self._unitsPerEm
+        if scrollArea is not None:
+            # compute new scrollbar position
+            hSB = scrollArea.horizontalScrollBar()
+            vSB = scrollArea.verticalScrollBar()
+            viewport = scrollArea.viewport()
+            centerPos = QPoint(viewport.width() / 2, viewport.height() / 2)
+            pos = self.mapToCanvas(self.mapFromParent(centerPos))
+        self.setScale(newScale)
+        if scrollArea is not None:
+            pos = self.mapFromCanvas(pos)
+            delta = pos - self.mapFromParent(centerPos)
+            hSB.setValue(hSB.value() + delta.x())
+            vSB.setValue(vSB.value() + delta.y())
 
     def scale(self):
         return self._scale
@@ -145,7 +167,8 @@ class GlyphWidget(QWidget):
 
     def _calculateDrawingRect(self):
         # calculate and store the drawing rect
-        glyphWidth = self._glyph.width * self._scale
+        # TODO: we only need the width here
+        glyphWidth = self._getGlyphWidthHeight()[0] * self._scale
         diff = self.width() - glyphWidth
         xOffset = round((diff / 2) * self._inverseScale)
 
@@ -157,12 +180,17 @@ class GlyphWidget(QWidget):
         self._drawingRect = (-xOffset, -yOffset, w, h)
 
     def _getGlyphWidthHeight(self):
-        if self._glyph is None:
+        glyph = self._glyph
+        if glyph is None:
             return 0, 0
+        # get the default layer width, that's what we use to draw
+        # the background
+        if glyph.layerSet is not None:
+            glyph = glyph.layerSet.defaultLayer[glyph.name]
         bottom = self._descender
         top = max(self._capHeight, self._ascender,
                   self._unitsPerEm + self._descender)
-        width = self._glyph.width
+        width = glyph.width
         height = -bottom + top
         return width, height
 
@@ -318,7 +346,7 @@ class GlyphWidget(QWidget):
         if layerName is None:
             return self._fallbackDrawingAttributes.get(attr)
         d = self._layerDrawingAttributes.get(layerName, {})
-        return d.get(attr)
+        return d.get(attr, attr == "showGlyphStroke" or None)
 
     def setDrawingAttribute(self, attr, value, layerName):
         if layerName is None:
@@ -417,37 +445,37 @@ class GlyphWidget(QWidget):
     def drawBackground(self, painter):
         pass
 
-    def drawGlyphLayer(self, painter, glyph, layerName):
+    def drawGlyphLayer(self, painter, glyph, layerName, default=False):
+        fontLayerName = None if default else layerName
         # draw the image
         if self.drawingAttribute("showGlyphImage", layerName):
-            self.drawImage(painter, glyph, layerName)
+            self.drawImage(painter, glyph, fontLayerName)
         # draw the blues
-        if layerName is None and self.drawingAttribute(
+        if fontLayerName is None and self.drawingAttribute(
                 "showFontPostscriptBlues", None):
-            self.drawBlues(painter, glyph, layerName)
-        if layerName is None and self.drawingAttribute(
+            self.drawBlues(painter, glyph, fontLayerName)
+        if fontLayerName is None and self.drawingAttribute(
                 "showFontPostscriptFamilyBlues", None):
-            self.drawFamilyBlues(painter, glyph, layerName)
-        # draw the margins
-        if self.drawingAttribute("showGlyphMargins", layerName):
-            self.drawMargins(painter, glyph, layerName)
-        # draw the vertical metrics
-        if layerName is None and self.drawingAttribute(
-                "showFontVerticalMetrics", None):
-            self.drawVerticalMetrics(painter, glyph, layerName)
+            self.drawFamilyBlues(painter, glyph, fontLayerName)
+        # draw the metrics
+        if fontLayerName is None and self.drawingAttribute(
+                "showGlyphMetrics", None):
+            self.drawMetrics(painter, glyph, fontLayerName)
+
+        layerName = None if glyph == self._glyph else layerName
         # draw the guidelines
         if layerName is None and self.drawingAttribute(
                 "showFontGuidelines", None) or self.drawingAttribute(
                         "showGlyphGuidelines", None):
             self.drawGuidelines(painter, glyph, layerName)
         # draw the glyph
-        if self.drawingAttribute("showGlyphFill", layerName) or \
-                self.drawingAttribute("showGlyphStroke", layerName):
-            self.drawFillAndStroke(painter, glyph, layerName)
         if self.drawingAttribute("showGlyphOnCurvePoints", layerName) or \
                 self.drawingAttribute("showGlyphOffCurvePoints",
                                       layerName):
             self.drawPoints(painter, glyph, layerName)
+        if self.drawingAttribute("showGlyphFill", layerName) or \
+                self.drawingAttribute("showGlyphStroke", layerName):
+            self.drawFillAndStroke(painter, glyph, layerName)
         if self.drawingAttribute("showGlyphAnchors", layerName):
             self.drawAnchors(painter, glyph, layerName)
 
@@ -463,13 +491,15 @@ class GlyphWidget(QWidget):
         drawing.drawFontPostscriptFamilyBlues(
             painter, glyph, self._inverseScale, self._drawingRect)
 
-    def drawVerticalMetrics(self, painter, glyph, layerName):
+    def drawMetrics(self, painter, glyph, layerName):
+        drawVMetrics = layerName is None and self.drawingAttribute(
+            "showFontVerticalMetrics", None)
         drawText = self.drawingAttribute(
             "showFontVerticalMetricsTitles", layerName) and \
             self._impliedPointSize > GlyphViewMinSizeForDetails
-        drawing.drawFontVerticalMetrics(
+        drawing.drawGlyphMetrics(
             painter, glyph, self._inverseScale, self._drawingRect,
-            drawText=drawText)
+            drawVMetrics=drawVMetrics, drawText=drawText)
 
     def drawGuidelines(self, painter, glyph, layerName):
         drawText = self._impliedPointSize > GlyphViewMinSizeForDetails
@@ -482,20 +512,14 @@ class GlyphWidget(QWidget):
                 painter, glyph, self._inverseScale, self._drawingRect,
                 drawText=drawText)
 
-    def drawMargins(self, painter, glyph, layerName):
-        drawing.drawGlyphMargins(
-            painter, glyph, self._inverseScale, self._drawingRect)
-
-    def drawFillAndStroke(self, painter, glyph, layerName):
-        showFill = self.drawingAttribute("showGlyphFill", layerName)
-        showStroke = self.drawingAttribute("showGlyphStroke", layerName)
-        drawing.drawGlyphFillAndStroke(
-            painter, glyph, self._inverseScale, self._drawingRect,
-            drawFill=showFill, drawStroke=showStroke)
-
     def drawPoints(self, painter, glyph, layerName):
         if not self._impliedPointSize > GlyphViewMinSizeForDetails:
             return
+        # XXX: those won't be drawn if points are hidden
+        drawFill = self.drawingAttribute("showGlyphFill", layerName)
+        drawing.drawGlyphFillAndStroke(
+            painter, glyph, self._inverseScale, self._drawingRect,
+            drawFill=drawFill, drawStroke=False)
         drawStartPoints = self.drawingAttribute(
             "showGlyphStartPoints", layerName)
         drawOnCurves = self.drawingAttribute(
@@ -507,7 +531,14 @@ class GlyphWidget(QWidget):
         drawing.drawGlyphPoints(
             painter, glyph, self._inverseScale, self._drawingRect,
             drawStartPoints=drawStartPoints, drawOnCurves=drawOnCurves,
-            drawOffCurves=drawOffCurves, drawCoordinates=drawCoordinates)
+            drawOffCurves=drawOffCurves, drawCoordinates=drawCoordinates,
+            backgroundColor=self._backgroundColor)
+
+    def drawFillAndStroke(self, painter, glyph, layerName):
+        showStroke = self.drawingAttribute("showGlyphStroke", layerName)
+        drawing.drawGlyphFillAndStroke(
+            painter, glyph, self._inverseScale, self._drawingRect,
+            drawFill=False, drawComponentsFill=False, drawStroke=showStroke)
 
     def drawAnchors(self, painter, glyph, layerName):
         if not self._impliedPointSize > GlyphViewMinSizeForDetails:
@@ -526,7 +557,7 @@ class GlyphWidget(QWidget):
         painter = QPainter(self)
         painter.setFont(UIFont)
         painter.setRenderHint(QPainter.Antialiasing)
-        rect = self.rect()
+        rect = event.rect()
 
         # draw the background
         painter.fillRect(rect, self._backgroundColor)
@@ -546,7 +577,7 @@ class GlyphWidget(QWidget):
         # gather the layers
         layerSet = self._glyph.layerSet
         if layerSet is None:
-            layers = [(self._glyph, None)]
+            layers = [(self._glyph, None, True)]
         else:
             glyphName = self._glyph.name
             layers = []
@@ -555,13 +586,11 @@ class GlyphWidget(QWidget):
                 if glyphName not in layer:
                     continue
                 glyph = layer[glyphName]
-                if glyph == self._glyph:
-                    layerName = None
-                layers.append((glyph, layerName))
+                layers.append((glyph, layerName, layer == layerSet.defaultLayer))
 
         self.drawBackground(painter)
-        for glyph, layerName in layers:
-            self.drawGlyphLayer(painter, glyph, layerName)
+        for glyph, layerName, default in layers:
+            self.drawGlyphLayer(painter, glyph, layerName, default)
         self.drawForeground(painter)
         painter.restore()
 
@@ -593,7 +622,7 @@ class GlyphWidget(QWidget):
         self.fitScaleBBox()
 
     def wheelEvent(self, event):
-        if event.modifiers() & Qt.ControlModifier:
+        if event.modifiers() & platformSpecific.scaleModifier():
             step = event.angleDelta().y() / 120.0
             self.zoom(step, event.pos())
             self.pointSizeModified.emit(self._impliedPointSize)
@@ -652,6 +681,12 @@ class GlyphView(QScrollArea):
     # --------------
     # Public Methods
     # --------------
+
+    def pointSize(self):
+        return self._glyphWidget.pointSize()
+
+    def setPointSize(self, pointSize):
+        self._glyphWidget.setPointSize(pointSize)
 
     def scale(self):
         return self._glyphWidget.scale()

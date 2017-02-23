@@ -1,26 +1,25 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, absolute_import
-from defconQt.tools import drawing, platformSpecific
+from defconQt.tools import platformSpecific
 from defconQt.tools.drawing import colorToQColor
-from PyQt5.QtCore import QRectF, Qt
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import (
-    QColor, QFontMetrics, QLinearGradient, QPainter, QPixmap)
+    QColor, QFontMetrics, QPainter, QPainterPath, QPixmap)
 
 GlyphCellHeaderHeight = 13
 GlyphCellMinHeightForHeader = 40
-GlyphCellMinHeightForMetrics = 90
+GlyphCellMinHeightForMetrics = 100
 
 cellHeaderBaseColor = QColor(230, 230, 230)
 cellHeaderSidebearingsColor = QColor(240, 240, 240)
 cellHeaderLineColor = QColor(170, 170, 170)
-cellMetricsLineColor = QColor.fromRgbF(0, 0, 0, .08)
-cellMetricsFillColor = QColor.fromRgbF(0, 0, 0, .08)
+cellMetricsFillColor = cellMetricsLineColor = QColor(224, 226, 220)
+cellMetricsTextColor = QColor(72, 72, 72)
+cellDirtyColor = QColor(240, 240, 240, 170)
 
 headerFont = platformSpecific.otherUIFont()
 
-# TODO: allow top or bottom headers
 # TODO: fine-tune dirty appearance
-# TODO: show a symbol for content present on other layers
 
 
 def GlyphCellFactory(glyph, width, height, drawLayers=False, drawMarkColor=True, drawHeader=None, drawMetrics=None, pixelRatio=1.0):
@@ -57,29 +56,34 @@ class GlyphCellFactoryDrawingController(object):
     """
 
     def __init__(self, glyph, font, width, height, pixelRatio=1.0,
-                 drawLayers=False, drawMarkColor=True, drawHeader=True, drawMetrics=False):
+                 drawLayers=False, drawMarkColor=True, drawHeader=True, drawMetrics=True):
         self.glyph = glyph
         self.font = font
         self.pixelRatio = pixelRatio
         self.width = width
         self.height = height
-        self.bufferPercent = .15
+        self.bufferPercent = .10
         self.shouldDrawHeader = drawHeader
         self.shouldDrawLayers = drawLayers
         self.shouldDrawMarkColor = drawMarkColor
         self.shouldDrawMetrics = drawMetrics
 
+        self.headerAtBottom = True
         self.headerHeight = 0
         if drawHeader:
             self.headerHeight = GlyphCellHeaderHeight
         availableHeight = (height - self.headerHeight) * (
             1.0 - (self.bufferPercent * 2))
         descender = font.info.descender or -250
-        unitsPerEm = font.info.unitsPerEm or 1000
+        # some fonts overflow their upm, try to infer
+        if font.info.descender and font.info.ascender:
+            unitsPerEm = font.info.ascender - descender
+        else:
+            unitsPerEm = font.info.unitsPerEm or 1000
         self.buffer = height * self.bufferPercent
         self.scale = availableHeight / unitsPerEm
         self.xOffset = (width - (glyph.width * self.scale)) / 2
-        self.yOffset = abs(descender * self.scale) + self.buffer
+        self.yOffset = abs(descender * self.scale) + .4 * self.buffer
 
     def getPixmap(self):
         pixmap = QPixmap(self.width * self.pixelRatio, self.height * self.pixelRatio)
@@ -89,15 +93,25 @@ class GlyphCellFactoryDrawingController(object):
         painter.setRenderHint(QPainter.Antialiasing)
         painter.translate(0, self.height)
         painter.scale(1, -1)
-        bodyRect = (0, 0, self.width, self.height-self.headerHeight)
-        headerRect = (0, 0, self.width, self.headerHeight)
+        if self.headerAtBottom:
+            bodyRect = (0, 0, self.width, self.height-self.headerHeight)
+            headerRect = (0, 0, self.width, self.headerHeight)
+        else:
+            bodyRect = (0, 0, self.width, self.height-self.headerHeight)
+            headerRect = (0, 0, self.width, self.headerHeight)
         # background
         painter.save()
-        painter.translate(0, self.height-self.headerHeight)
+        if self.headerAtBottom:
+            h = self.height
+        else:
+            h = self.height - self.headerHeight
+        painter.translate(0, h)
         painter.scale(1, -1)
         self.drawCellBackground(painter, bodyRect)
         painter.restore()
         # glyph
+        if self.headerAtBottom:
+            painter.translate(0, self.headerHeight)
         if self.shouldDrawMetrics:
             self.drawCellHorizontalMetrics(painter, bodyRect)
             self.drawCellVerticalMetrics(painter, bodyRect)
@@ -109,14 +123,18 @@ class GlyphCellFactoryDrawingController(object):
         painter.restore()
         # foreground
         painter.save()
-        painter.translate(0, self.height-self.headerHeight)
+        painter.translate(0, self.height - self.headerHeight)
         painter.scale(1, -1)
         self.drawCellForeground(painter, bodyRect)
         painter.restore()
         # header
         if self.shouldDrawHeader:
             painter.save()
-            painter.translate(0, self.height)
+            if self.headerAtBottom:
+                h = 0
+            else:
+                h = self.height
+            painter.translate(0, h)
             painter.scale(1, -1)
             self.drawCellHeaderBackground(painter, headerRect)
             self.drawCellHeaderText(painter, headerRect)
@@ -128,39 +146,64 @@ class GlyphCellFactoryDrawingController(object):
             markColor = self.glyph.markColor
             if markColor is not None:
                 color = colorToQColor(markColor)
-                markGradient = QLinearGradient(
-                    0, 0, 0, self.height - GlyphCellHeaderHeight)
-                markGradient.setColorAt(1.0, color)
-                markGradient.setColorAt(0.0, color.lighter(115))
-                painter.fillRect(*(rect+(markGradient,)))
+                color.setAlphaF(.7 * color.alphaF())
+                painter.fillRect(*(rect+(color,)))
+        if self.shouldDrawHeader:
+            if self.glyph.dirty:
+                x, y, w, h = rect
+                painter.fillRect(*(rect+(cellDirtyColor,)))
+                path = QPainterPath()
+                path.moveTo(x + w - 12, 0)
+                path.lineTo(x + w, 0)
+                path.lineTo(x + w, 12)
+                path.closeSubpath()
+                painter.fillPath(path, QColor(255, 0, 0, 170))
 
     def drawCellHorizontalMetrics(self, painter, rect):
-        xMin, yMin, width, height = rect
-        font = self.font
-        scale = self.scale
-        yOffset = self.yOffset
-        lines = set((0, font.info.descender, font.info.xHeight,
-                     font.info.capHeight, font.info.ascender))
-        painter.setPen(cellMetricsLineColor)
-        for y in lines:
-            if y is None:
-                continue
-            y = round((y * scale) + yMin + yOffset)
-            drawing.drawLine(painter, xMin, y, xMin + width, y)
-
-    def drawCellVerticalMetrics(self, painter, rect):
         xMin, yMin, width, height = rect
         glyph = self.glyph
         scale = self.scale
         xOffset = self.xOffset
         left = round((0 * scale) + xMin + xOffset)
         right = round((glyph.width * scale) + xMin + xOffset)
-        rects = [
-            (xMin, yMin, left - xMin, height),
-            (xMin + right, yMin, width - xMin + right, height)
-        ]
-        for rect in rects:
-            painter.fillRect(*(rect+(cellMetricsFillColor,)))
+
+        hi = 750
+        lo = -250
+        font = self.font
+        yOffset = self.yOffset
+        if font is not None:
+            ascender = font.info.ascender or 750
+            capHeight = font.info.capHeight or 750
+            hi = max(ascender, capHeight)
+            lo = font.info.descender or -250
+        hi = round((hi * scale) + yMin + yOffset)
+        lo = round((lo * scale) + yMin + yOffset)
+
+        painter.save()
+        painter.setPen(cellMetricsFillColor)
+        painter.setRenderHint(QPainter.Antialiasing, False)
+        painter.drawLine(left, lo, left, hi)
+        painter.drawLine(right, lo, right, hi)
+        painter.restore()
+
+    def drawCellVerticalMetrics(self, painter, rect):
+        xMin, yMin, width, height = rect
+        font = self.font
+        scale = self.scale
+        xOffset, yOffset = self.xOffset, self.yOffset
+        left = round((0 * scale) + xMin + xOffset)
+        right = round((self.glyph.width * scale) + xMin + xOffset)
+        lines = set((0, font.info.descender, font.info.xHeight,
+                     font.info.capHeight, font.info.ascender))
+        painter.save()
+        painter.setPen(cellMetricsLineColor)
+        painter.setRenderHint(QPainter.Antialiasing, False)
+        for y in lines:
+            if y is None:
+                continue
+            y = round((y * scale) + yMin + yOffset)
+            painter.drawLine(left, y, right, y)
+        painter.restore()
 
     def drawCellGlyph(self, painter):
         if self.shouldDrawLayers:
@@ -187,21 +230,13 @@ class GlyphCellFactoryDrawingController(object):
     def drawCellHeaderBackground(self, painter, rect):
         xMin, yMin, width, height = rect
         # background
-        baseColor = cellHeaderBaseColor
-        sidebearingsColor = cellHeaderSidebearingsColor
-        if self.glyph.dirty:
-            baseColor = baseColor.darker(125)
-            sidebearingsColor = sidebearingsColor.darker(110)
-        painter.fillRect(xMin, yMin, width, height, baseColor)
-        # sidebearings
-        realPixel = 1 / self.pixelRatio
-        painter.fillRect(QRectF(xMin, yMin, realPixel, height), sidebearingsColor)
-        painter.fillRect(QRectF(
-            xMin + width - 2 * realPixel, yMin, 2 * realPixel, height), sidebearingsColor)
-        # bottom line
-        y = yMin + height
-        painter.setPen(cellHeaderLineColor)
-        drawing.drawLine(painter, xMin, y, xMin + width, y)
+        if self.shouldDrawMarkColor and self.glyph.markColor is not None:
+            color = colorToQColor(self.glyph.markColor)
+        elif self.glyph.dirty:
+            color = cellDirtyColor
+        else:
+            color = Qt.white
+        painter.fillRect(xMin, yMin, width, height, color)
 
     def drawCellHeaderText(self, painter, rect):
         xMin, yMin, width, height = rect
@@ -209,7 +244,7 @@ class GlyphCellFactoryDrawingController(object):
         minOffset = painter.pen().width()
 
         painter.setFont(headerFont)
-        painter.setPen(QColor(80, 80, 80))
+        painter.setPen(cellMetricsTextColor)
         name = metrics.elidedText(
             self.glyph.name, Qt.ElideRight, width - 2)
         painter.drawText(
