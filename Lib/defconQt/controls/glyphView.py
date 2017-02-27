@@ -30,6 +30,7 @@ class GlyphWidget(QWidget):
         self.setContextMenuPolicy(Qt.DefaultContextMenu)
         self.setFocusPolicy(Qt.ClickFocus)
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self._fitViewport = True
         self._glyph = None
         self._scrollArea = None
 
@@ -618,8 +619,10 @@ class GlyphWidget(QWidget):
 
     def showEvent(self, event):
         super(GlyphWidget, self).showEvent(event)
-        self._calculateDrawingRect()
-        self.fitScaleBBox()
+        if hasattr(self, "_fitViewport"):
+            self._calculateDrawingRect()
+            self.fitScaleBBox()
+            del self._fitViewport
 
     def wheelEvent(self, event):
         if event.modifiers() & platformSpecific.scaleModifier():
