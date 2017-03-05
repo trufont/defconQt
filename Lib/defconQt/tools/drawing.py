@@ -10,7 +10,6 @@ Notes:
 
 - All drawing is done in font units
 - The *scale* argument is the factor to scale a glyph unit to a view unit
-- The *rect* argument is the rect that the glyph is being drawn in
 
 """
 from __future__ import division, absolute_import
@@ -345,7 +344,7 @@ def _drawGuidelines(painter, glyph, scale, rect, guidelines, drawLines=True,
 # Blues
 
 
-def drawFontPostscriptBlues(painter, glyph, scale, rect, color=None):
+def drawFontPostscriptBlues(painter, glyph, scale, color=None):
     """
     Draws a Glyph_ *glyph*’s blue values.
 
@@ -366,7 +365,7 @@ def drawFontPostscriptBlues(painter, glyph, scale, rect, color=None):
     _drawBlues(painter, glyph, blues, color)
 
 
-def drawFontPostscriptFamilyBlues(painter, glyph, scale, rect, color=None):
+def drawFontPostscriptFamilyBlues(painter, glyph, scale, color=None):
     """
     Draws a Glyph_ *glyph*’s family blue values.
 
@@ -394,7 +393,7 @@ def _drawBlues(painter, glyph, blues, color):
 # Image
 
 
-def drawGlyphImage(painter, glyph, scale, rect):
+def drawGlyphImage(painter, glyph, scale):
     """
     Draws a Glyph_ *glyph*’s image.
 
@@ -414,7 +413,7 @@ def drawGlyphImage(painter, glyph, scale, rect):
 # Metrics
 
 
-def drawGlyphMetrics(painter, glyph, scale, rect, drawHMetrics=True, drawVMetrics=True,
+def drawGlyphMetrics(painter, glyph, scale, drawHMetrics=True, drawVMetrics=True,
                      drawText=False, color=None, textColor=None):
     """
     TODO: doc comment needs update
@@ -422,9 +421,6 @@ def drawGlyphMetrics(painter, glyph, scale, rect, drawHMetrics=True, drawVMetric
     Draws vertical metrics of the Glyph_ *glyph* (ascender, descender,
     baseline, x-height, cap height) in the form of lines if *drawLines* is true
     and text if *drawText* is true using QPainter_ *painter*.
-
-    *rect* specifies the rectangle which the lines will be drawn in (usually,
-    that of the glyph’s advance width).
 
     .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
     .. _QPainter: http://doc.qt.io/qt-5/qpainter.html
@@ -501,9 +497,9 @@ def drawGlyphMetrics(painter, glyph, scale, rect, drawHMetrics=True, drawVMetric
 
 
 def drawGlyphFillAndStroke(
-        painter, glyph, scale, rect, drawFill=True, drawStroke=True,
-        drawComponentsFill=True, contourFillColor=None, contourStrokeColor=None,
-        componentFillColor=None, componentStrokeColor=None, strokeWidth=0):
+        painter, glyph, scale, drawFill=True, drawStroke=True,
+        drawComponentsFill=True, drawComponentsStroke=False, contourFillColor=None,
+        contourStrokeColor=None, componentFillColor=None, componentStrokeColor=None):
     """
     Draws a Glyph_ *glyph* contours’ fill and stroke.
 
@@ -541,21 +537,24 @@ def drawGlyphFillAndStroke(
         painter.fillPath(componentPath, QBrush(componentFillColor))
     # stroke
     if drawStroke:
-        # work out the color
         if contourStrokeColor is None:
             if layerColor is not None:
                 contourStrokeColor = layerColor
             else:
                 contourStrokeColor = defaultColor("glyphContourStroke")
-        # contours
         pen = QPen(contourStrokeColor)
-        pen.setWidthF(strokeWidth * scale)
+        pen.setWidth(0)
         painter.setPen(pen)
         painter.drawPath(contourPath)
     # components
-    if componentStrokeColor is not None:
+    if drawComponentsStroke:
+        if componentStrokeColor is None:
+            if layerColor is not None:
+                componentStrokeColor = layerColor
+            else:
+                componentStrokeColor = defaultColor("glyphContourStroke")
         pen = QPen(componentStrokeColor)
-        pen.setWidthF(strokeWidth * scale)
+        pen.setWidth(0)
         painter.setPen(pen)
         painter.drawPath(componentPath)
     painter.restore()
@@ -564,7 +563,7 @@ def drawGlyphFillAndStroke(
 
 
 def drawGlyphPoints(
-        painter, glyph, scale, rect,
+        painter, glyph, scale,
         drawStartPoints=True, drawOnCurves=True, drawOffCurves=True,
         drawCoordinates=False, drawSelection=True, drawBluesMarkers=True,
         onCurveColor=None, onCurveSmoothColor=None, offCurveColor=None,
@@ -590,7 +589,7 @@ def drawGlyphPoints(
     outlineData = glyph.getRepresentation("defconQt.OutlineInformation")
     points = []
     # blue zones markers
-    if drawBluesMarkers:
+    if drawBluesMarkers and drawOnCurves:
         font = glyph.font
         blues = []
         if font.info.postscriptBlueValues:
@@ -721,7 +720,7 @@ def drawGlyphPoints(
 # Anchors
 
 
-def drawGlyphAnchors(painter, glyph, scale, rect, drawAnchors=True,
+def drawGlyphAnchors(painter, glyph, scale, drawAnchors=True,
                      drawText=True, color=None):
     """
     Draws a Glyph_ *glyph*’s anchors.

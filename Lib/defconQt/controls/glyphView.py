@@ -438,6 +438,7 @@ class GlyphWidget(QWidget):
 
     def setBackgroundColor(self, color):
         self._backgroundColor = color
+        self.update()
 
     # ---------------
     # Drawing helpers
@@ -472,25 +473,25 @@ class GlyphWidget(QWidget):
         # draw the glyph
         if self.drawingAttribute("showGlyphOnCurvePoints", layerName) or \
                 self.drawingAttribute("showGlyphOffCurvePoints",
-                                      layerName):
-            self.drawPoints(painter, glyph, layerName)
-        if self.drawingAttribute("showGlyphFill", layerName) or \
-                self.drawingAttribute("showGlyphStroke", layerName):
-            self.drawFillAndStroke(painter, glyph, layerName)
+                                      layerName) or \
+                self.drawingAttribute("showGlyphFill", layerName):
+            self.drawFillAndPoints(painter, glyph, layerName)
+        if self.drawingAttribute("showGlyphStroke", layerName):
+            self.drawStroke(painter, glyph, layerName)
         if self.drawingAttribute("showGlyphAnchors", layerName):
             self.drawAnchors(painter, glyph, layerName)
 
     def drawImage(self, painter, glyph, layerName):
         drawing.drawGlyphImage(
-            painter, glyph, self._inverseScale, self._drawingRect)
+            painter, glyph, self._inverseScale)
 
     def drawBlues(self, painter, glyph, layerName):
         drawing.drawFontPostscriptBlues(
-            painter, glyph, self._inverseScale, self._drawingRect)
+            painter, glyph, self._inverseScale)
 
     def drawFamilyBlues(self, painter, glyph, layerName):
         drawing.drawFontPostscriptFamilyBlues(
-            painter, glyph, self._inverseScale, self._drawingRect)
+            painter, glyph, self._inverseScale)
 
     def drawMetrics(self, painter, glyph, layerName):
         drawVMetrics = layerName is None and self.drawingAttribute(
@@ -499,7 +500,7 @@ class GlyphWidget(QWidget):
             "showFontVerticalMetricsTitles", layerName) and \
             self._impliedPointSize > GlyphViewMinSizeForDetails
         drawing.drawGlyphMetrics(
-            painter, glyph, self._inverseScale, self._drawingRect,
+            painter, glyph, self._inverseScale,
             drawVMetrics=drawVMetrics, drawText=drawText)
 
     def drawGuidelines(self, painter, glyph, layerName):
@@ -513,14 +514,13 @@ class GlyphWidget(QWidget):
                 painter, glyph, self._inverseScale, self._drawingRect,
                 drawText=drawText)
 
-    def drawPoints(self, painter, glyph, layerName):
-        if not self._impliedPointSize > GlyphViewMinSizeForDetails:
-            return
-        # XXX: those won't be drawn if points are hidden
+    def drawFillAndPoints(self, painter, glyph, layerName):
         drawFill = self.drawingAttribute("showGlyphFill", layerName)
         drawing.drawGlyphFillAndStroke(
-            painter, glyph, self._inverseScale, self._drawingRect,
+            painter, glyph, self._inverseScale,
             drawFill=drawFill, drawStroke=False)
+        if not self._impliedPointSize > GlyphViewMinSizeForDetails:
+            return
         drawStartPoints = self.drawingAttribute(
             "showGlyphStartPoints", layerName)
         drawOnCurves = self.drawingAttribute(
@@ -530,15 +530,15 @@ class GlyphWidget(QWidget):
         drawCoordinates = self.drawingAttribute(
             "showGlyphPointCoordinates", layerName)
         drawing.drawGlyphPoints(
-            painter, glyph, self._inverseScale, self._drawingRect,
+            painter, glyph, self._inverseScale,
             drawStartPoints=drawStartPoints, drawOnCurves=drawOnCurves,
             drawOffCurves=drawOffCurves, drawCoordinates=drawCoordinates,
             backgroundColor=self._backgroundColor)
 
-    def drawFillAndStroke(self, painter, glyph, layerName):
+    def drawStroke(self, painter, glyph, layerName):
         showStroke = self.drawingAttribute("showGlyphStroke", layerName)
         drawing.drawGlyphFillAndStroke(
-            painter, glyph, self._inverseScale, self._drawingRect,
+            painter, glyph, self._inverseScale,
             drawFill=False, drawComponentsFill=False, drawStroke=showStroke)
 
     def drawAnchors(self, painter, glyph, layerName):

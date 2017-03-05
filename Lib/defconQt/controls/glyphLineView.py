@@ -30,7 +30,7 @@ class GlyphLineWidget(QWidget):
     """
     glyphActivated = pyqtSignal(Glyph)
     pointSizeModified = pyqtSignal(int)
-    selectionModified = pyqtSignal(object)
+    selectionModified = pyqtSignal(object)  # Note: object because it can be None
 
     def __init__(self, parent=None):
         super(GlyphLineWidget, self).__init__(parent)
@@ -559,17 +559,17 @@ class GlyphLineWidget(QWidget):
 
     def drawImage(self, painter, glyph, layerName, rect):
         drawing.drawGlyphImage(
-            painter, glyph, self._inverseScale, rect,
+            painter, glyph, self._inverseScale,
             backgroundColor=self._backgroundColor)
 
     def drawBlues(self, painter, glyph, layerName, rect):
         drawing.drawFontPostscriptBlues(
-            painter, glyph, self._inverseScale, rect,
+            painter, glyph, self._inverseScale,
             backgroundColor=self._backgroundColor)
 
     def drawFamilyBlues(self, painter, glyph, layerName, rect):
         drawing.drawFontPostscriptFamilyBlues(
-            painter, glyph, self._inverseScale, rect,
+            painter, glyph, self._inverseScale,
             backgroundColor=self._backgroundColor)
 
     def drawVerticalMetrics(self, painter, glyph, layerName, rect):
@@ -577,12 +577,12 @@ class GlyphLineWidget(QWidget):
             "showFontVerticalMetricsTitles", layerName) and \
             self._pointSize > 150
         drawing.drawFontVerticalMetrics(
-            painter, glyph, self._inverseScale, rect, drawText=drawText,
+            painter, glyph, self._inverseScale, drawText=drawText,
             backgroundColor=self._backgroundColor)
 
     def drawMargins(self, painter, glyph, layerName, rect):
         drawing.drawGlyphMargins(
-            painter, glyph, self._inverseScale, rect,
+            painter, glyph, self._inverseScale,
             backgroundColor=self._backgroundColor)
 
     def drawFillAndStroke(self, painter, glyph, layerName, rect):
@@ -592,7 +592,7 @@ class GlyphLineWidget(QWidget):
         if not self._showLayers:
             fillColor = self._glyphColor
         drawing.drawGlyphFillAndStroke(
-            painter, glyph, self._inverseScale, rect, drawFill=showFill,
+            painter, glyph, self._inverseScale, drawFill=showFill,
             drawStroke=showStroke, contourFillColor=fillColor,
             componentFillColor=fillColor)
 
@@ -606,7 +606,7 @@ class GlyphLineWidget(QWidget):
         drawCoordinates = self.drawingAttribute(
             "showGlyphPointCoordinates", layerName) and self._pointSize > 250
         drawing.drawGlyphPoints(
-            painter, glyph, self._inverseScale, rect,
+            painter, glyph, self._inverseScale,
             drawStartPoints=drawStartPoints, drawOnCurves=drawOnCurves,
             drawOffCurves=drawOffCurves, drawCoordinates=drawCoordinates,
             backgroundColor=self._backgroundColor)
@@ -614,7 +614,7 @@ class GlyphLineWidget(QWidget):
     def drawAnchors(self, painter, glyph, layerName, rect):
         drawText = self._pointSize > 50
         drawing.drawGlyphAnchors(
-            painter, glyph, self._inverseScale, rect, drawText=drawText,
+            painter, glyph, self._inverseScale, drawText=drawText,
             backgroundColor=self._backgroundColor)
 
     def drawGlyphForeground(self, painter, glyph, rect, selected=False):
