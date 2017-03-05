@@ -251,9 +251,7 @@ class GlyphContextView(QWidget):
         fitHeight = self.height()
         fitWidth = self.width()
         glyph = self._glyph
-        bottom = self._descender
-        top = max(self._capHeight, self._ascender,
-                  self._unitsPerEm + self._descender)
+        bottom, top = self.verticalBounds()
         height = -bottom + top
         self.setScale(fitHeight / height)
         otherWidth = 0
@@ -304,6 +302,12 @@ class GlyphContextView(QWidget):
     def scrollBy(self, point):
         self._drawingOffset += point
         self.update()
+
+    def verticalBounds(self):
+        bottom = self._descender
+        top = max(self._capHeight, self._ascender,
+                  self._unitsPerEm + self._descender)
+        return bottom, top
 
     def zoom(self, newScale, anchor="center"):
         """
