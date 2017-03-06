@@ -16,7 +16,6 @@ from PyQt5.QtWidgets import QPinchGesture, QScrollArea, QSizePolicy, QWidget
 
 # TODO: when the scrollArea resizes, keep the view centered
 
-GlyphViewMinSizeForCoordinates = 250
 GlyphViewMinSizeForDetails = 175
 
 UIFont = platformSpecific.otherUIFont()
@@ -68,8 +67,6 @@ class GlyphWidget(QWidget):
         self._impliedPointSize = 1000
 
         # drawing calculation
-        self._centerVertically = True
-        self._centerHorizontally = True
         self._noPointSizePadding = 200
         self._verticalCenterYBuffer = 0
 

@@ -10,9 +10,6 @@ GlyphCellHeaderHeight = 13
 GlyphCellMinHeightForHeader = 40
 GlyphCellMinHeightForMetrics = 100
 
-cellHeaderBaseColor = QColor(230, 230, 230)
-cellHeaderSidebearingsColor = QColor(240, 240, 240)
-cellHeaderLineColor = QColor(170, 170, 170)
 cellMetricsFillColor = cellMetricsLineColor = QColor(224, 226, 220)
 cellMetricsTextColor = QColor(72, 72, 72)
 cellDirtyColor = QColor(240, 240, 240, 170)

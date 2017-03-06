@@ -565,7 +565,7 @@ def drawGlyphFillAndStroke(
 def drawGlyphPoints(
         painter, glyph, scale,
         drawStartPoints=True, drawOnCurves=True, drawOffCurves=True,
-        drawCoordinates=False, drawSelection=True, drawBluesMarkers=True,
+        drawCoordinates=False, drawBluesMarkers=True,
         onCurveColor=None, onCurveSmoothColor=None, offCurveColor=None,
         otherColor=None, backgroundColor=None):
     """
