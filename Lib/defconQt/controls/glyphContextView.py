@@ -171,9 +171,16 @@ class GlyphContextView(QWidget):
         if index is None:
             index = self._activeIndex
         ret = QPointF(self._drawingOffset)
-        for i in range(index):
-            glyph = self._glyphRecords[i].glyph
-            ret += glyph.width * self._scale
+        for glyphIndex, glyphRecord in enumerate(self._glyphRecords):
+            if glyphIndex == index:
+                break
+            glyph = glyphRecord.glyph
+            xA = glyphRecord.xAdvance
+            yA = glyphRecord.yAdvance
+            #
+            ret += QPointF(
+                (glyph.width + xA) * self._scale,
+                (glyph.height + yA) * self._scale)
         return ret
 
     def inverseScale(self):
@@ -355,18 +362,23 @@ class GlyphContextView(QWidget):
         if index is None:
             index = self._activeIndex
         offset = self._drawingOffset
-        x = pos.x()
-        for glyphIndex, glyph in enumerate(self.glyphs()):
+        x, y = pos.x(), pos.y()
+        for glyphIndex, glyphRecord in enumerate(self._glyphRecords):
             if glyphIndex == index:
                 break
+            glyph = glyphRecord.glyph
+            xA = glyphRecord.xAdvance
+            yA = glyphRecord.yAdvance
+            #
             layerSet = glyph.layerSet
             if layerSet is not None:
                 layer = layerSet.defaultLayer
                 if glyph.name in layer:
                     glyph = layer[glyph.name]
-            x += glyph.width
+            x += glyph.width + xA
+            y += glyph.height + yA
         x = x * self._scale + offset.x()
-        y = pos.y() * -self._scale + offset.y()
+        y = y * -self._scale + offset.y()
         return pos.__class__(x, y)
 
     def mapToCanvas(self, pos, index=None):
@@ -381,15 +393,20 @@ class GlyphContextView(QWidget):
         offset = self._drawingOffset
         x = (pos.x() - offset.x()) * self._inverseScale
         y = (offset.y() - pos.y()) * self._inverseScale
-        for glyphIndex, glyph in enumerate(self.glyphs()):
+        for glyphIndex, glyphRecord in enumerate(self._glyphRecords):
             if glyphIndex == index:
                 break
+            glyph = glyphRecord.glyph
+            xA = glyphRecord.xAdvance
+            yA = glyphRecord.yAdvance
+            #
             layerSet = glyph.layerSet
             if layerSet is not None:
                 layer = layerSet.defaultLayer
                 if glyph.name in layer:
                     glyph = layer[glyph.name]
-            x -= glyph.width
+            x -= glyph.width + xA
+            y -= glyph.height + yA
         return pos.__class__(x, y)
 
     def mapRectFromCanvas(self, rect):
