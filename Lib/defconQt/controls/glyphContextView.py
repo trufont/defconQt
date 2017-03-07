@@ -255,7 +255,7 @@ class GlyphContextView(QWidget):
                 layer = layerSet.defaultLayer
                 if glyph.name in layer:
                     layerGlyph = layer[glyph.name]
-                    w, h = layerGlyph.w, layerGlyph.h
+                    w, h = layerGlyph.width, layerGlyph.height
             glyphRecord.advanceWidth = w
             glyphRecord.advanceHeight = h
             #
