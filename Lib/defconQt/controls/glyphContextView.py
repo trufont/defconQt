@@ -173,14 +173,16 @@ class GlyphContextView(QWidget):
         ret = QPointF(self._drawingOffset)
         for glyphIndex, glyphRecord in enumerate(self._glyphRecords):
             if glyphIndex == index:
+                xP, yP = glyphRecord.xPlacement, glyphRecord.yPlacement
+                ret += QPointF(xP * self._scale, yP * self._scale)
                 break
-            glyph = glyphRecord.glyph
+            w = glyphRecord.advanceWidth
+            h = glyphRecord.advanceHeight
             xA = glyphRecord.xAdvance
             yA = glyphRecord.yAdvance
             #
             ret += QPointF(
-                (glyph.width + xA) * self._scale,
-                (glyph.height + yA) * self._scale)
+                (w + xA) * self._scale, (h + yA) * self._scale)
         return ret
 
     def inverseScale(self):
@@ -246,6 +248,17 @@ class GlyphContextView(QWidget):
         for glyph in glyphs:
             glyphRecord = GlyphRecord()
             glyphRecord.glyph = glyph
+            #
+            w, h = glyph.width, glyph.height
+            layerSet = glyph.layerSet
+            if layerSet is not None:
+                layer = layerSet.defaultLayer
+                if glyph.name in layer:
+                    layerGlyph = layer[glyph.name]
+                    w, h = layerGlyph.w, layerGlyph.h
+            glyphRecord.advanceWidth = w
+            glyphRecord.advanceHeight = h
+            #
             glyphRecords.append(glyphRecord)
         self.setGlyphRecords(glyphRecords)
 
@@ -365,18 +378,17 @@ class GlyphContextView(QWidget):
         x, y = pos.x(), pos.y()
         for glyphIndex, glyphRecord in enumerate(self._glyphRecords):
             if glyphIndex == index:
+                xP, yP = glyphRecord.xPlacement, glyphRecord.yPlacement
+                x += xP
+                y += yP
                 break
-            glyph = glyphRecord.glyph
+            w = glyphRecord.advanceWidth
+            h = glyphRecord.advanceHeight
             xA = glyphRecord.xAdvance
             yA = glyphRecord.yAdvance
             #
-            layerSet = glyph.layerSet
-            if layerSet is not None:
-                layer = layerSet.defaultLayer
-                if glyph.name in layer:
-                    glyph = layer[glyph.name]
-            x += glyph.width + xA
-            y += glyph.height + yA
+            x += w + xA
+            y += h + yA
         x = x * self._scale + offset.x()
         y = y * -self._scale + offset.y()
         return pos.__class__(x, y)
@@ -395,18 +407,17 @@ class GlyphContextView(QWidget):
         y = (offset.y() - pos.y()) * self._inverseScale
         for glyphIndex, glyphRecord in enumerate(self._glyphRecords):
             if glyphIndex == index:
+                xP, yP = glyphRecord.xPlacement, glyphRecord.yPlacement
+                x -= xP
+                y -= yP
                 break
-            glyph = glyphRecord.glyph
+            w = glyphRecord.advanceWidth
+            h = glyphRecord.advanceHeight
             xA = glyphRecord.xAdvance
             yA = glyphRecord.yAdvance
             #
-            layerSet = glyph.layerSet
-            if layerSet is not None:
-                layer = layerSet.defaultLayer
-                if glyph.name in layer:
-                    glyph = layer[glyph.name]
-            x -= glyph.width + xA
-            y -= glyph.height + yA
+            x -= w + xA
+            y -= h + yA
         return pos.__class__(x, y)
 
     def mapRectFromCanvas(self, rect):
