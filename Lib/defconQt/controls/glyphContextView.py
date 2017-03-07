@@ -713,6 +713,7 @@ class GlyphContextView(QWidget):
         painter.restore()
 
         for recordIndex, glyphRecord in enumerate(self._glyphRecords):
+            active = recordIndex == self._activeIndex
             glyph = glyphRecord.glyph
             w = glyphRecord.advanceWidth
             h = glyphRecord.advanceHeight
