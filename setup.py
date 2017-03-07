@@ -8,7 +8,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="defconQt",
-    version="0.5.0",
+    version="0.5.1.dev0",
     description="A set of Qt objects for use in defcon applications.",
     # long_description=long_description,
     author="Adrien Tétar",

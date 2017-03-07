@@ -3,4 +3,4 @@
 defconQt is a set of Qt widgets for use in defcon applications.
 """
 
-__version__ = "0.5.0"
+__version__ = "0.5.1.dev0"
