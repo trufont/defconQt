@@ -243,7 +243,7 @@ class GlyphContextView(QWidget):
         for index, glyph in enumerate(glyphs):
             glyphRecord = GlyphRecord()
             glyphRecord.glyph = glyph
-            glyphRecord.index = index
+            glyphRecord.cluster = index
             #
             w, h = glyph.width, glyph.height
             layerSet = glyph.layerSet
@@ -776,11 +776,11 @@ class GlyphContextView(QWidget):
 
 class GlyphRecord(object):
     __slots__ = [
-        "glyph", "index", "xOffset", "yOffset", "xAdvance", "yAdvance"]
+        "glyph", "cluster", "xOffset", "yOffset", "xAdvance", "yAdvance"]
 
     def __init__(self):
         self.glyph = None
-        self.index = 0
+        self.cluster = 0
         self.xOffset = 0
         self.yOffset = 0
         self.xAdvance = 0
