@@ -785,3 +785,8 @@ class GlyphRecord(object):
         self.yOffset = 0
         self.xAdvance = 0
         self.yAdvance = 0
+
+    def __repr__(self):
+        return "<GlyphRecord {}={}@{},{}+{}>".format(
+            self.glyph.name, self.cluster, self.xAdvance, self.xOffset,
+            self.yOffset)

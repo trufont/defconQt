@@ -64,7 +64,7 @@ def otherUIFont():
     Returns an auxiliary UI font.
     """
     font = QFont()
-    pointSize = 8
+    pointSize = 9
     if sys.platform == "win32":
         font.setFamily("Segoe UI")
     elif sys.platform == "darwin":
@@ -74,7 +74,7 @@ def otherUIFont():
             import platform
         if platform.mac_ver()[0].startswith("10.10"):
             font.setFamily("Lucida Grande")
-        pointSize = 11
+        pointSize = 12
     elif sys.platform.startswith("linux"):
         font.setFamily("Luxi Sans")
     font.setPointSize(pointSize)
