@@ -79,7 +79,7 @@ class RoundedButtonSet(QWidget):
                     shiftSelection = self._selection ^ self._oldSelection
                     if shiftSelection:
                         self._selection = shiftSelection
-                self.buttonClicked.emit()
+                self.clicked.emit()
             else:
                 self._selection = self._oldSelection
             self.update()
