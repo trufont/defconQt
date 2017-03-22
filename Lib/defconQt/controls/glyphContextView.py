@@ -681,12 +681,9 @@ class GlyphContextView(QWidget):
                 painter.translate(xO, yO)
             # draw the background
             painter.save()
-            dGlyph = glyphRecord.glyph
-            try:
-                dGlyph = dGlyph.layerSet.defaultLayer.glyph
-            except AttributeError:
-                pass
-            self.drawGlyphBackground(painter, dGlyph, GlyphFlags(active))
+            foreGlyph = glyphRecord.glyph
+            foreGlyph = foreGlyph.font[foreGlyph.name]
+            self.drawGlyphBackground(painter, foreGlyph, GlyphFlags(active))
             self.drawBackground(painter, recordIndex)
             painter.restore()
             # shift for the next glyph

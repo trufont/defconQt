@@ -7,7 +7,7 @@ _vPad = 6
 
 
 class RoundedButtonSet(QWidget):
-    buttonClicked = pyqtSignal()
+    clicked = pyqtSignal()
     SingleSelection = 1
     OneOrMoreSelection = 2
 
