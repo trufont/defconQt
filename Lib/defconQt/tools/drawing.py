@@ -498,7 +498,7 @@ def drawGlyphMetrics(painter, glyph, scale, drawHMetrics=True, drawVMetrics=True
 
 def drawGlyphFillAndStroke(
         painter, glyph, scale, drawFill=True, drawStroke=True,
-        drawComponentsFill=True, drawComponentsStroke=False, contourFillColor=None,
+        drawComponentFill=True, drawComponentStroke=False, contourFillColor=None,
         contourStrokeColor=None, componentFillColor=None, componentStrokeColor=None):
     """
     Draws a Glyph_ *glyph* contours’ fill and stroke.

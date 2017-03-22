@@ -424,7 +424,7 @@ class GlyphContextView(QWidget):
 
     def drawingAttribute(self, attr, flags):
         if flags.isActiveGlyph != flags.isActiveLayer:
-            if not flags.isActiveGlyph and attr == "showComponentsStroke":
+            if not flags.isActiveGlyph and attr == "showComponentStroke":
                 return True
             return attr == "showGlyphStroke"
         elif not flags.isActiveGlyph:
@@ -606,9 +606,12 @@ class GlyphContextView(QWidget):
 
     def drawFillAndPoints(self, painter, glyph, flags):
         drawFill = self.drawingAttribute("showGlyphFill", flags)
+        drawComponentFill = self.drawingAttribute(
+            "showComponentFill", flags)
         drawing.drawGlyphFillAndStroke(
             painter, glyph, self._inverseScale,
-            drawFill=drawFill, drawStroke=False)
+            drawFill=drawFill, drawComponentFill=drawComponentFill,
+            drawStroke=False)
         if not self._impliedPointSize > GlyphViewMinSizeForDetails:
             return
         drawStartPoints = self.drawingAttribute(
@@ -627,12 +630,12 @@ class GlyphContextView(QWidget):
 
     def drawStroke(self, painter, glyph, flags):
         drawStroke = self.drawingAttribute("showGlyphStroke", flags)
-        drawComponentsStroke = self.drawingAttribute(
-            "showComponentsStroke", flags)
+        drawComponentStroke = self.drawingAttribute(
+            "showComponentStroke", flags)
         drawing.drawGlyphFillAndStroke(
             painter, glyph, self._inverseScale,
             drawFill=False, drawComponentsFill=False, drawStroke=drawStroke,
-            drawComponentsStroke=drawComponentsStroke)
+            drawComponentStroke=drawComponentStroke)
 
     def drawAnchors(self, painter, glyph, flags):
         if not self._impliedPointSize > GlyphViewMinSizeForDetails:
