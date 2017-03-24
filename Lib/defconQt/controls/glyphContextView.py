@@ -49,6 +49,8 @@ class GlyphContextView(QWidget):
         self._defaultDrawingAttributes = dict(
             showGlyphFill=False,
             showGlyphStroke=True,
+            showGlyphComponentFill=True,
+            showGlyphComponentStroke=False,
             showGlyphOnCurvePoints=True,
             showGlyphStartPoints=True,
             showGlyphOffCurvePoints=True,
@@ -424,7 +426,7 @@ class GlyphContextView(QWidget):
 
     def drawingAttribute(self, attr, flags):
         if flags.isActiveGlyph != flags.isActiveLayer:
-            if not flags.isActiveGlyph and attr == "showComponentStroke":
+            if not flags.isActiveGlyph and attr == "showGlyphComponentStroke":
                 return True
             return attr == "showGlyphStroke"
         elif not flags.isActiveGlyph:
@@ -556,11 +558,11 @@ class GlyphContextView(QWidget):
             self.drawGuidelines(painter, glyph, flags)
         # draw the glyph
         if self.drawingAttribute("showGlyphOnCurvePoints", flags) or \
-                self.drawingAttribute("showGlyphOffCurvePoints",
-                                      flags) or \
-                self.drawingAttribute("showGlyphFill", flags):
+                self.drawingAttribute("showGlyphFill", flags) or \
+                self.drawingAttribute("showGlyphComponentFill", flags):
             self.drawFillAndPoints(painter, glyph, flags)
-        if self.drawingAttribute("showGlyphStroke", flags):
+        if self.drawingAttribute("showGlyphStroke", flags) or \
+                self.drawingAttribute("showGlyphComponentStroke", flags):
             self.drawStroke(painter, glyph, flags)
         if self.drawingAttribute("showGlyphAnchors", flags):
             self.drawAnchors(painter, glyph, flags)
@@ -607,7 +609,7 @@ class GlyphContextView(QWidget):
     def drawFillAndPoints(self, painter, glyph, flags):
         drawFill = self.drawingAttribute("showGlyphFill", flags)
         drawComponentFill = self.drawingAttribute(
-            "showComponentFill", flags)
+            "showGlyphComponentFill", flags)
         drawing.drawGlyphFillAndStroke(
             painter, glyph, self._inverseScale,
             drawFill=drawFill, drawComponentFill=drawComponentFill,
@@ -631,7 +633,7 @@ class GlyphContextView(QWidget):
     def drawStroke(self, painter, glyph, flags):
         drawStroke = self.drawingAttribute("showGlyphStroke", flags)
         drawComponentStroke = self.drawingAttribute(
-            "showComponentStroke", flags)
+            "showGlyphComponentStroke", flags)
         drawing.drawGlyphFillAndStroke(
             painter, glyph, self._inverseScale,
             drawFill=False, drawComponentsFill=False, drawStroke=drawStroke,
