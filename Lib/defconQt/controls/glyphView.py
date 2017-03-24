@@ -536,7 +536,7 @@ class GlyphWidget(QWidget):
         showStroke = self.drawingAttribute("showGlyphStroke", layerName)
         drawing.drawGlyphFillAndStroke(
             painter, glyph, self._inverseScale,
-            drawFill=False, drawComponentsFill=False, drawStroke=showStroke)
+            drawFill=False, drawComponentFill=False, drawStroke=showStroke)
 
     def drawAnchors(self, painter, glyph, layerName):
         if not self._impliedPointSize > GlyphViewMinSizeForDetails:

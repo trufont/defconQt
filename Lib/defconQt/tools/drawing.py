@@ -528,7 +528,7 @@ def drawGlyphFillAndStroke(
                 contourFillColor = defaultColor("glyphContourFill")
         painter.fillPath(contourPath, QBrush(contourFillColor))
     # components
-    if drawComponentsFill:
+    if drawComponentFill:
         if componentFillColor is None:
             if layerColor is not None:
                 componentFillColor = layerColor
@@ -547,7 +547,7 @@ def drawGlyphFillAndStroke(
         painter.setPen(pen)
         painter.drawPath(contourPath)
     # components
-    if drawComponentsStroke:
+    if drawComponentStroke:
         if componentStrokeColor is None:
             if layerColor is not None:
                 componentStrokeColor = layerColor
