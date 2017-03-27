@@ -8,7 +8,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="defconQt",
-    version="0.5.3.dev0",
+    version="0.5.3",
     description="A set of Qt objects for use in defcon applications.",
     # long_description=long_description,
     author="Adrien Tétar",
@@ -20,9 +20,9 @@ setup(
     platforms=["Win32", "Mac OS X", "Linux"],
     install_requires=[
         "pyqt5>=5.5.0",
-        "fonttools>=3.3.1",
+        "fonttools>=3.9.1",
         "ufoLib>=2.0.0",
-        "defcon>=0.2.0",
+        "defcon>=0.3.1",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
