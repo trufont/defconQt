@@ -392,7 +392,7 @@ class GlyphCellWidget(QWidget):
 
     def mousePressEvent(self, event):
         if event.button() in (Qt.LeftButton, Qt.RightButton):
-            self._oldSelection = self._selection
+            self._oldSelection = set(self._selection)
             index = self._findIndexForEvent(event)
             modifiers = event.modifiers()
 
