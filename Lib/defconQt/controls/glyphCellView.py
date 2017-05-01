@@ -554,6 +554,8 @@ class GlyphCellWidget(QWidget):
         lastResortIndex = None
         for index, glyph in enumerate(self._glyphs):
             item = glyph.name
+            if item is None:
+                continue
             # if the item starts with the input string, it is considered
             # a match
             if item.startswith(self._inputString):
