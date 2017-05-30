@@ -453,7 +453,10 @@ class GlyphCellWidget(QWidget):
             self._maybeDragPosition = None
             # XXX: we should use modifiers registered on click
             if not event.modifiers() & Qt.ShiftModifier:
-                self._selection = {self._lastSelectedCell}
+                if self._lastSelectedCell is not None:
+                    self._selection = {self._lastSelectedCell}
+                else:
+                    self._selection = set()
                 self.update()
             self._oldSelection = None
         else:
