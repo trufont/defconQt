@@ -595,6 +595,7 @@ class GlyphCellWidget(QWidget):
                     lastResortIndex = index
                     continue
 
+        newSelection = None
         if matchIndex is not None:
             newSelection = matchIndex
         elif lastResortIndex is not None:
