@@ -16,7 +16,7 @@ from fontTools.pens.qtPen import QtPen
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QGraphicsColorizeEffect
-from defconQt.tools.drawing import applyEffectToPixmap
+from defconQt.tools.drawing import applyEffectToPixmap, colorToQColor
 from ufoLib.pointPen import AbstractPointPen
 import math
 
@@ -179,14 +179,12 @@ def QPixmapFactory(image):
     if image.fileName not in images:
         return None
     imageColor = image.color
-    # TODO: are we really doing this?
-    if imageColor is None:
-        imageColor = layer.color
     data = images[image.fileName]
     pixmap = QPixmap()
     pixmap.loadFromData(data)
     if imageColor is not None:
         colorEffect = QGraphicsColorizeEffect()
-        colorEffect.setColor(imageColor)
+        colorEffect.setColor(colorToQColor(imageColor))
+        colorEffect.setStrength(.8)
         return applyEffectToPixmap(pixmap, colorEffect)
     return pixmap
