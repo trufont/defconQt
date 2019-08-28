@@ -17,7 +17,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QGraphicsColorizeEffect
 from defconQt.tools.drawing import applyEffectToPixmap, colorToQColor
-from ufoLib.pointPen import AbstractPointPen
+from fontTools.ufoLib.pointPen import AbstractPointPen
 import math
 
 # -------------

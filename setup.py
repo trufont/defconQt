@@ -20,9 +20,8 @@ setup(
     platforms=["Win32", "Mac OS X", "Linux"],
     install_requires=[
         "pyqt5>=5.5.0",
-        "fonttools>=3.9.1",
-        "ufoLib>=2.0.0",
-        "defcon>=0.3.1",
+        "fonttools[ufo]>=3.40.0",
+        "defcon>=0.6.0",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",

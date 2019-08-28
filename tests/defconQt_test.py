@@ -4,6 +4,6 @@
 def test_import_dependencies():
     import PyQt5
     import fontTools
-    import ufoLib
+    import fontTools.ufoLib
     import defcon
     import defconQt
